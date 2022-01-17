@@ -38,24 +38,22 @@ def osmm_ProcessIndexes(indexes):
         # processing one category & skipping fields
         if not cat.startswith("@"):
             # category is named cat
-            print(cat)
-
             sub_indexes = indexes[cat]
             if type(sub_indexes) is OrderedDict:
                 item = sub_indexes
                 # item["@type"] = cat
-                item["@country"] = ossm_ExtractArea(item["@name"], item["@type"])
+                item["@country"] = osmm_ExtractArea(item["@name"], item["@type"])
                 osmmIndexes.append(item)
             if type(sub_indexes) is list:
                 # list of OrderedDict to be parse
                 for item in sub_indexes:
                     # item["@type"] = cat
-                    item["@country"] = ossm_ExtractArea(item["@name"], item["@type"])
+                    item["@country"] = osmm_ExtractArea(item["@name"], item["@type"])
                     osmmIndexes.append(item)
 
     return osmmIndexes
 
-def ossm_ExtractArea(filename, cat):
+def osmm_ExtractArea(filename, cat):
     # no country for depth category
     if cat in NOAREA_CATS:
         return "N/A"
@@ -66,18 +64,18 @@ def ossm_ExtractArea(filename, cat):
             filename = filename.replace(prefix+"_", "")
     return filename.split("_")[0]
 
-def ossm_GetCategories(indexes):
+def osmm_GetCategories(indexes):
     return sorted(set([item["@type"] for item in indexes]))
 
-def ossm_GetCountries(indexes, cat):
+def osmm_GetCountries(indexes, cat):
     filtered_indexes = [item for item in indexes if item["@type"] == cat]
     return sorted(set([item["@country"] for item in filtered_indexes]))
 
-def ossm_GetFiles(indexes, cat, country = None):
-    filtered_indexes = ossm_FilterIndex(indexes, cat, country)
+def osmm_GetFiles(indexes, cat, country = None):
+    filtered_indexes = osmm_FilterIndex(indexes, cat, country)
     return sorted(set([item["@name"] for item in filtered_indexes]))
 
-def ossm_FilterIndex(indexes, cat = None, country = None, toget = None):
+def osmm_FilterIndex(indexes, cat = None, country = None, toget = None):
     if cat is None and country is None and toget is None:
         return indexes
 
@@ -100,12 +98,12 @@ def ossm_FilterIndex(indexes, cat = None, country = None, toget = None):
 
     return filtered_indexes
 
-def ossm_SetDownload(indexes, filename, state = True):
+def osmm_SetDownload(indexes, filename, state = True):
     for item in indexes:
         if item["@name"] == filename:
             item["@ossm_get"] = state
-def ossm_UnsetDownload(indexes, filename):
-    ossm_SetDownload(indexes, filename, False)
+def osmm_UnsetDownload(indexes, filename):
+    osmm_SetDownload(indexes, filename, False)
 
-def ossm_GetDownloads(indexes):
-    return ossm_FilterIndex(indexes, toget=True)
+def osmm_GetDownloads(indexes):
+    return osmm_FilterIndex(indexes, toget=True)
