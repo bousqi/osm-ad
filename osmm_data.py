@@ -67,9 +67,20 @@ def osmm_ExtractArea(filename, cat):
 def osmm_GetCategories(indexes):
     return sorted(set([item["@type"] for item in indexes]))
 
-def osmm_GetCountries(indexes, cat):
-    filtered_indexes = [item for item in indexes if item["@type"] == cat]
+def osmm_GetCountries(indexes, cat = None):
+    if cat is not None:
+        filtered_indexes = [item for item in indexes if item["@type"] == cat]
+    else:
+        filtered_indexes = indexes
     return sorted(set([item["@country"] for item in filtered_indexes]))
+
+def osmm_GetItem(indexes, filename):
+    if filename is None or indexes is None:
+        return None
+
+    for item in indexes:
+        if item["@name"] == filename:
+            return item
 
 def osmm_GetFiles(indexes, cat, country = None):
     filtered_indexes = osmm_FilterIndex(indexes, cat, country)

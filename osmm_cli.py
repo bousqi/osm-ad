@@ -3,6 +3,7 @@ from osmm_data import *
 from collections import OrderedDict
 import click
 
+g_indexes = None
 
 def cli_help(ctx, param, value):
     if value is False:
@@ -11,31 +12,81 @@ def cli_help(ctx, param, value):
     ctx.exit()
 
 
+def cli_print_header():
+    print("{:^10} | {:^9} | {:^10} | {}".format("Type", "Size", "Date", "Name"))
+    print("{:>10} | {:>9} | {} | {}".format("-"*10, "-"*9, "-"*10, "-"*100, ))
+def cli_print_item(item):
+    print("{:>10} | {:>6} MB | {} | {}".format(item["@type"], item["@size"], item["@date"], item["@name"]))
+
 def cli_dump(indexes):
-    print("TODO")
+    cli_print_header()
+    for item in indexes:
+        cli_print_item(item)
+
+    print("\nDisplayed {} items among {}".format(len(indexes), len(g_indexes)))
+
 def cli_dump_areas(indexes):
-    print("TODO-AREAS")
+    countries = osmm_GetCountries(indexes)
+    print("{:>4} items : {}".format(len(countries), countries))
+
 def cli_dump_types(indexes):
-    print("TODO-TYPES")
+    categories = osmm_GetCategories(indexes)
+    print("{:>4} items : {}".format(len(categories), categories))
+
+def cli_dump_date(item):
+    if item is not None:
+        print("{}".format(item["@date"]))
 
 
 @click.command()
+@click.option('--feed',  '-f', "feed", is_flag=True, type=bool, help="Silent feed of assets (updates local cache)")
 @click.option('--list',  '-l', "lists", type=click.Choice(['ALL', 'AREAS', 'TYPES'], case_sensitive=False), default='ALL', help="List assets available")
+@click.option('--type', '-t', "item_type", type=str, default=None, help="List only assets part of this type")
+@click.option('--area', '-a', "item_area", type=str, default=None, help="List only assets part of this area")
+@click.option('--date', '-d', "asset", type=str, default=None, help="Retrieve date update for specified asset")
 @click.option('--cache', '-c', "from_cache", is_flag=True, type=bool, help="Use cached file rather than online server")
+@click.option('--verbose', '-v', "verbose", is_flag=True, type=bool, help="Verbose mode")
 @click.pass_context
-def main(ctx, lists, from_cache):
-    if not lists and not from_cache:
+def main(ctx, lists, item_type, item_area, asset, from_cache, feed, verbose):
+    global g_indexes
+
+    # nothing to do ?
+    if not lists and not from_cache and not silent:
         cli_help(ctx, None, value=True)
 
-    osmm_data.CACHE_ONLY = from_cache
-    indexes = osmm_ProcessIndexes(osmm_data.osmm_FeedIndex())
+    # requested to feed
+    if feed:
+        verbose = False
+        from_cache = False
 
-    if lists == 'ALL':
-        cli_dump(indexes)
-    elif lists == 'AREAS':
-        cli_dump_areas(indexes)
-    elif lists == 'TYPES':
-        cli_dump_types(indexes)
+    # using cache or server ?
+    osmm_data.CACHE_ONLY = from_cache
+    if verbose:
+        if from_cache:
+            print("< Feeding from cache >")
+        else:
+            print("< Feeding from server >")
+    g_indexes = osmm_ProcessIndexes(osmm_data.osmm_FeedIndex())
+
+    if asset is not None:
+        cli_dump_date(osmm_GetItem(g_indexes, asset))
+        return
+
+    # applying filters
+    sub_indexes = g_indexes
+    if item_type is not None:
+        sub_indexes = osmm_FilterIndex(sub_indexes, cat=item_type)
+    if item_area is not None:
+        sub_indexes = osmm_FilterIndex(sub_indexes, country=item_area)
+
+    # display results
+    if not feed:
+        if lists == 'ALL':
+            cli_dump(sub_indexes)
+        elif lists == 'AREAS':
+            cli_dump_areas(sub_indexes)
+        elif lists == 'TYPES':
+            cli_dump_types(sub_indexes)
 
 
 if __name__ == '__main__':
