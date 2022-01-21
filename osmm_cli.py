@@ -36,6 +36,9 @@ def cli_dump_types(indexes):
 def cli_dump_date(item):
     if item is not None:
         print("{}".format(item["@date"]))
+        return 0
+    else:
+        return 1
 
 
 @click.command()
@@ -69,8 +72,7 @@ def main(ctx, lists, item_type, item_area, asset, from_cache, feed, verbose):
     g_indexes = osmm_ProcessIndexes(osmm_data.osmm_FeedIndex())
 
     if asset is not None:
-        cli_dump_date(osmm_GetItem(g_indexes, asset))
-        return
+        return cli_dump_date(osmm_GetItem(g_indexes, asset))
 
     # applying filters
     sub_indexes = g_indexes
@@ -88,6 +90,7 @@ def main(ctx, lists, item_type, item_area, asset, from_cache, feed, verbose):
         elif lists == 'TYPES':
             cli_dump_types(sub_indexes)
 
+    return 0
 
 if __name__ == '__main__':
     main()
