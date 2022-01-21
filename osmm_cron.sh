@@ -11,7 +11,7 @@ function date2sec {
 }
 
 # updating cache index
-# python3 osmm_cli.py -f
+python3 osmm_cli.py -f
 
 # clean previous
 URLS_LOC=$(mktemp)
@@ -27,7 +27,7 @@ do
 		ds_update=$(date2sec $date_update)
 		ds_ref=$(date2sec $date_ref)
 		# compare update date with file date
-		if [[ "$ds_update" -lt "$ds_ref" ]]; then
+		if [[ "$ds_update" -gt "$ds_ref" ]]; then
 			echo "TO DOWNLOAD"
 			# adding item to URLs to be downloaded
 			echo "$URL_PREFIX$asset_name" >> $URLS_LOC
@@ -42,7 +42,6 @@ then
 	echo "No Updates"
 else
 	echo "Starting ARIA2...."
-	aria2c -i $URLS_LOC -s6 -x10 -c 
-	# --auto-file-renaming=false
+	aria2c -i $URLS_LOC -s6 -x10 -c --auto-file-renaming=false
 fi
 
