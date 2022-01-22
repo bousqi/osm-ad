@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# add asset with 
+#$ touch -d 1970-01-01 assets/World_basemap_2.obf.zip
+
 # URLS_LOC=cache/URLs.txt
 URL_PREFIX="https://download.osmand.net/download?event=2&file="
 
@@ -16,13 +19,20 @@ python3 osmm_cli.py -f
 # clean previous
 URLS_LOC=$(mktemp)
 
-for f in assets/*; 
+for f in assets/*.zip; 
 do
 	asset_name=$(basename "$f")
 	date_update=$(python3 osmm_cli.py -c -d "$asset_name")
 	if [[ $? -eq 0 ]]; then
-		date_ref=$(date -r $f +%d.%m.%Y)
-		echo -n "$asset_name : $date_ref -> $date_update - "
+
+		# checking partial download
+		if [[ -e $f.aria2 ]]; then
+			date_ref="01.01.1970"
+		else
+			date_ref=$(date -r $f +%d.%m.%Y)
+		fi
+		echo -ne "$asset_name \r"
+		echo -ne "\t\t\t\t\t\t\t\t\t: $date_ref -> $date_update - "
 
 		ds_update=$(date2sec $date_update)
 		ds_ref=$(date2sec $date_ref)
@@ -41,7 +51,9 @@ if [[ $(cat $URLS_LOC | wc -l) -eq "0" ]];
 then
 	echo "No Updates"
 else
-	echo "Starting ARIA2...."
+	echo "Downloading...."
+	cd assets
 	aria2c -i $URLS_LOC -s6 -x10 -c --auto-file-renaming=false
+	cd ..
 fi
 
