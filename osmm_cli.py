@@ -4,6 +4,20 @@ from collections import OrderedDict
 import click
 
 g_indexes = None
+g_order = None
+
+'''
+TODO list :
+ - Commands to create :
+    * Add item to watch list
+    * View items in watch list
+    * Download & Extract items
+    * Clear watch list
+ - Download using requests and chunks by chunks
+ - Write watch list to a file
+ - Read watch list from file
+ - Extract item, and remove _2 suffix
+'''
 
 def cli_help(ctx, param, value):
     if value is False:
@@ -20,7 +34,18 @@ def cli_print_item(item):
 
 def cli_dump(indexes):
     cli_print_header()
-    for item in indexes:
+
+    if g_order == 'name':
+        sorted_indexes = sorted(indexes, key=lambda d: d["@"+g_order])
+    elif g_order == 'size':
+        sorted_indexes = sorted(indexes, key=lambda d: float(d["@"+g_order]))
+    elif g_order == 'date':
+        sorted_indexes = sorted(indexes, key=lambda d: d["@"+g_order])
+    else:
+        sorted_indexes = indexes
+
+    # going through items
+    for item in sorted_indexes:
         cli_print_item(item)
 
     print("\nDisplayed {} items among {}".format(len(indexes), len(g_indexes)))
@@ -43,18 +68,20 @@ def cli_dump_date(item):
 
 @click.command()
 @click.option('--feed',  '-f', "feed", is_flag=True, type=bool, help="Silent feed of assets (updates local cache)")
+@click.option('--cache', '-c', "from_cache", is_flag=True, type=bool, help="Use cached file rather than online server")
 @click.option('--list',  '-l', "lists", type=click.Choice(['ALL', 'AREAS', 'TYPES'], case_sensitive=False), default='ALL', help="List assets available")
 @click.option('--type', '-t', "item_type", type=str, default=None, help="List only assets part of this type")
 @click.option('--area', '-a', "item_area", type=str, default=None, help="List only assets part of this area")
-@click.option('--date', '-d', "asset", type=str, default=None, help="Retrieve date update for specified asset")
-@click.option('--cache', '-c', "from_cache", is_flag=True, type=bool, help="Use cached file rather than online server")
+@click.option('--date', '-d', "item_name", type=str, default=None, help="Retrieve date update for specified asset")
+@click.option('--sort', '-s', "sort_order", type=click.Choice(['name', 'size', 'date'], case_sensitive=False), default='name', help="Order to use for list display")
 @click.option('--verbose', '-v', "verbose", is_flag=True, type=bool, help="Verbose mode")
 @click.pass_context
-def main(ctx, lists, item_type, item_area, asset, from_cache, feed, verbose):
+def main(ctx, lists, item_type, item_area, item_name, from_cache, feed, sort_order, verbose):
     global g_indexes
+    global g_order
 
     # nothing to do ?
-    if not lists and not from_cache and not silent:
+    if not lists and not from_cache and not feed:
         cli_help(ctx, None, value=True)
 
     # requested to feed
@@ -71,8 +98,13 @@ def main(ctx, lists, item_type, item_area, asset, from_cache, feed, verbose):
             print("< Feeding from server >")
     g_indexes = osmm_ProcessIndexes(osmm_data.osmm_FeedIndex())
 
-    if asset is not None:
-        return cli_dump_date(osmm_GetItem(g_indexes, asset))
+    if item_name is not None:
+        return cli_dump_date(osmm_GetItem(g_indexes, item_name))
+
+    # sharing display order
+    if item_type is None and item_area is None:
+        sort_order = None
+    g_order = sort_order
 
     # applying filters
     sub_indexes = g_indexes
