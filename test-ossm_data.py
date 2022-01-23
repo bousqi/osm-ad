@@ -93,6 +93,11 @@ class test_osmmaps_dl(unittest.TestCase):
         assert target2 in ddl_names
         assert target3 in ddl_names
 
+        # adding non existing item
+        osmm_SetDownload(indexes, "DOESNOTEXISTS")
+        assert len(ddl_list) == 3
+
+        # removing one item
         osmm_UnsetDownload(indexes, target3)
         ddl_list = osmm_GetDownloads(indexes)
         assert len(ddl_list) == 2

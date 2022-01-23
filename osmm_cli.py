@@ -1,7 +1,7 @@
-import osmm_data
-from osmm_data import *
-from collections import OrderedDict
+from tqdm import *
 import click
+
+from osmm_data import *
 
 g_indexes = None
 g_order = None
@@ -66,6 +66,42 @@ def cli_dump_date(item):
         return 1
 
 
+def cli_download(indexes):
+    if indexes is None:
+        print("Nothing to download.")
+        return
+
+    print("Processing download queue : {} item(s)".format(len(indexes)))
+
+    for index, item in enumerate(indexes):
+        filename = item["@name"]
+        url = REMOTE + DOWNLOAD_FILE + filename
+
+        # Getting file size
+        # r = requests.head(url)
+        # file_size = int(r.headers.get('content-length', 0))
+        file_size = int(item["@containerSize"])
+
+        # requesting file
+        r = requests.get(url, stream=True)
+
+        # Set configuration
+        block_size = 1024
+        initial_pos = 0
+        mode = 'wb'
+        file = "assets/" + filename
+
+        # creating output file
+        with open(file, mode) as f:
+            # creating progress bar
+            with tqdm(total=file_size, unit='B', unit_scale=True, unit_divisor=1024,
+                      desc="{}/{} - {:<40}".format(index+1, len(indexes), filename),
+                      initial=initial_pos, miniters=1, dynamic_ncols=True) as pbar:
+                # getting stream chunks to write
+                for chunk in r.iter_content(512 * block_size):
+                    f.write(chunk)
+                    pbar.update(len(chunk))
+
 @click.command()
 @click.option('--feed',  '-f', "feed", is_flag=True, type=bool, help="Silent feed of assets (updates local cache)")
 @click.option('--cache', '-c', "from_cache", is_flag=True, type=bool, help="Use cached file rather than online server")
@@ -124,8 +160,19 @@ def main(ctx, lists, item_type, item_area, item_name, from_cache, feed, sort_ord
 
     return 0
 
+def test_ddl():
+    g_indexes = osmm_ProcessIndexes(osmm_data.osmm_FeedIndex())
+    osmm_SetDownload(g_indexes, "France_new-aquitaine_europe_2.obf.zip")
+    osmm_SetDownload(g_indexes, "France_auvergne-rhone-alpes_allier_europe_2.obf.zip")
+    osmm_SetDownload(g_indexes, "da_0.voice.zip")
+    osmm_SetDownload(g_indexes, "NotoSans-Korean.otf.zip")
+    # osmm_UnsetDownload(g_indexes, "France_auvergne-rhone-alpes_allier_europe_2.obf.zip")
+    sublist = osmm_GetDownloads(g_indexes)
+    cli_download(sublist)
+
 if __name__ == '__main__':
     main()
+    # test_ddl()
 
 # @click.option('--message', '-m', "msg", type=str, help="Message to send")
 # @click.option('--no-title', '-n', "no_title", is_flag=True, is_eager=True, help="No title to be added to message")

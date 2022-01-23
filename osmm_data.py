@@ -8,7 +8,9 @@ import xmltodict
 REMOTE = "https://download.osmand.net"
 # INDEX_FILE="/get_indexes?gzip"
 INDEX_FILE = "/get_indexes"
+DOWNLOAD_FILE = "/download?event=2&file="
 
+WATCH_LIST = "cache/watch.list"
 CACHE_FILENAME = "cache/indexes.xml"
 CACHE_ONLY = True
 # CACHE_ONLY = False
