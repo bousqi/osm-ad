@@ -99,6 +99,10 @@ def cli_download(indexes):
 
     print("Processing download queue : {} item(s)".format(len(indexes)))
 
+    # checking assets dir exists before using it
+    if not os.path.isdir(OUTPUT_DIR):
+        os.mkdir(OUTPUT_DIR)
+
     for index, item in enumerate(indexes):
         filename = item["@name"]
 

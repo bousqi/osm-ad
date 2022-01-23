@@ -1,6 +1,6 @@
 # https://download.osmand.net/get_indexes?gzip
 # https://download.osmand.net/download?event=2&file=France_new-aquitaine_vienne_europe_2.obf.zip
-
+import os.path
 from collections import OrderedDict
 import requests
 import xmltodict
@@ -10,15 +10,19 @@ REMOTE = "https://download.osmand.net"
 INDEX_FILE = "/get_indexes"
 DOWNLOAD_FILE = "/download?event=2&file="
 
-WATCH_LIST = "cache/watch.list"
-CACHE_FILENAME = "cache/indexes.xml"
+CACHE_DIR = "cache/"
+CACHE_FILENAME = CACHE_DIR+"indexes.xml"
 CACHE_ONLY = True
 # CACHE_ONLY = False
+WATCH_LIST = CACHE_DIR+"watch.list"
 
 NOAREA_CATS = ["fonts", "depth", "voice"]
 FILE_PREFIXES = ["Hillshade", "Slope"]
 
 def osmm_FeedIndex():
+    # checking cache dir exists before using it
+    if not os.path.isdir(CACHE_DIR):
+        os.mkdir(CACHE_DIR)
 
     if CACHE_ONLY:
         with open(CACHE_FILENAME, "rb") as f_index:
