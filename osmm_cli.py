@@ -123,6 +123,8 @@ def cli_download(indexes):
     if not os.path.isdir(ASSETS_DIR):
         os.mkdir(ASSETS_DIR)
 
+    # tracking new items
+    new_indexes = []
     for index, item in enumerate(indexes):
         filename = item["@name"]
 
@@ -131,6 +133,8 @@ def cli_download(indexes):
             print("{}/{} - {:<40} - SKIPPED".format(index+1, len(indexes), filename))
             continue
 
+        # to download !
+        new_indexes.append(item)
         url = osmm_data.REMOTE + osmm_data.DOWNLOAD_FILE + filename
 
         # Getting file size
@@ -158,6 +162,7 @@ def cli_download(indexes):
                     f.write(chunk)
                     pbar.update(len(chunk))
 
+    return new_indexes
 
 def cli_expand(indexes):
     if indexes is None:
@@ -241,7 +246,7 @@ def update():
 
     # download items
     dl_list = osmm_data.osmm_GetDownloads(indexes)
-    cli_download(dl_list)
+    dl_list = cli_download(dl_list)
 
     # decompress assets
     cli_expand(dl_list)
