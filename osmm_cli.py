@@ -4,6 +4,7 @@ import osmm_data
 
 g_indexes = None
 g_order = None
+g_watchlist = []
 
 OUTPUT_DIR = "./assets/"
 
@@ -21,6 +22,13 @@ TODO list :
 
 # --------------------------------------------------------------------------
 
+
+def _assets_feed(from_cache = False):
+    global g_indexes
+
+    osmm_data.CACHE_ONLY = from_cache
+    g_indexes = osmm_data.osmm_ProcessIndexes(osmm_data.osmm_FeedIndex())
+    return g_indexes
 
 def cli_print_header():
     print("{:^10} | {:^9} | {:^10} | {}".format("Type", "Size", "Date", "Name"))
@@ -92,6 +100,22 @@ def _already_downloaded(item):
     return True
 
 
+def _watch_read():
+    global g_watchlist
+    g_watchlist = osmm_data.osmm_WatchRead()
+
+
+def _watch_write():
+    global g_watchlist
+    osmm_data.osmm_WatchWrite(g_watchlist)
+
+
+def _watch_apply(indexes):
+    global g_watchlist
+    for name in g_watchlist:
+        osmm_data.osmm_SetDownload(indexes, name)
+
+
 def cli_download(indexes):
     if indexes is None:
         print("Nothing to download.")
@@ -139,6 +163,16 @@ def cli_download(indexes):
                     pbar.update(len(chunk))
 
 
+def cli_expand(indexes):
+    if indexes is None:
+        print("Nothing to download.")
+        return
+
+    print("Expanding : {} item(s)".format(len(indexes)))
+    for index, item in enumerate(indexes):
+        print("{}/{} : {}".format(index+1, len(indexes), item["@name"]))
+
+
 # --------------------------------------------------------------------------
 
 
@@ -154,23 +188,59 @@ def cli():
 @click.option('--del',   '-d', "wdel", type=str, default=None, help="Remove specified asset from watch list")
 def watch(list, clear, wadd, wdel):
     """Watch list management"""
-    click.echo('Watch list')
+    global g_watchlist
+    global g_indexes
+
+    # reading list
+    _watch_read()
+
+    if list:
+        if g_watchlist is None or len(g_watchlist) == 0:
+            print("List is empty. Use --add")
+            return
+
+        # dumping list
+        for index, item in enumerate(g_watchlist):
+            print("{}/{} - {}".format(index+1, len(g_watchlist), item))
+    elif clear:
+        # clearing list
+        g_watchlist = []
+        _watch_write()
+        print("List cleared !")
+    else:
+        if wadd is not None:
+            if wadd in g_watchlist:
+                click.echo("ERROR: {} already in watchlist. Use watch -l command to check".format(wadd))
+                return 1
+            _assets_feed(True)
+            if osmm_data.osmm_GetItem(g_indexes, wadd) is None:
+                click.echo("ERROR: {} is not a valid asset. Use list command to check".format(wadd))
+                return 1
+            g_watchlist.append(wadd)
+            _watch_write()
+            click.echo("DONE : 1 item added to watch list, {} total".format(len(g_watchlist)))
+        elif wdel is not None:
+            pass
+
 
 
 @cli.command()  # @cli, not @click!
 def update():
     """Download/Update assets based on watch list"""
 
-    global g_indexes
-    g_indexes = osmm_data.osmm_ProcessIndexes(osmm_data.osmm_FeedIndex())
-    osmm_data.osmm_SetDownload(g_indexes, "France_new-aquitaine_europe_2.obf.zip")
-    osmm_data.osmm_SetDownload(g_indexes, "France_auvergne-rhone-alpes_allier_europe_2.obf.zip")
-    osmm_data.osmm_SetDownload(g_indexes, "da_0.voice.zip")
-    osmm_data.osmm_SetDownload(g_indexes, "NotoSans-Korean.otf.zip")
-    # osmm_UnsetDownload(g_indexes, "France_auvergne-rhone-alpes_allier_europe_2.obf.zip")
-    sublist = osmm_data.osmm_GetDownloads(g_indexes)
-    cli_download(sublist)
+    # feeding assets
+    indexes = _assets_feed()
 
+    # reads watch list from file & apply
+    _watch_read()
+    _watch_apply(indexes)
+
+    # download items
+    dl_list = osmm_data.osmm_GetDownloads(indexes)
+    cli_download(dl_list)
+
+    # decompress assets
+    cli_expand(dl_list)
 
 
 @cli.command()  # @cli, not @click!
@@ -193,12 +263,11 @@ def list(from_cache, lists, item_type, item_area, item_name, sort_order):
     global g_indexes
     global g_order
 
-    osmm_data.CACHE_ONLY = from_cache
     if from_cache:
         print("< Feeding from cache >")
     else:
         print("< Feeding from server >")
-    g_indexes = osmm_data.osmm_ProcessIndexes(osmm_data.osmm_FeedIndex())
+    _assets_feed(from_cache)
 
     if item_name is not None:
         return cli_dump_date(osmm_data.osmm_GetItem(g_indexes, item_name))

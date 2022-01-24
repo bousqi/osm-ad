@@ -84,9 +84,12 @@ def osmm_GetItem(indexes, filename):
     if filename is None or indexes is None:
         return None
 
+    # looking
     for item in indexes:
         if item["@name"] == filename:
             return item
+    # not found
+    return None
 
 def osmm_GetFiles(indexes, cat, country = None):
     filtered_indexes = osmm_FilterIndex(indexes, cat, country)
@@ -124,3 +127,17 @@ def osmm_UnsetDownload(indexes, filename):
 
 def osmm_GetDownloads(indexes):
     return osmm_FilterIndex(indexes, toget=True)
+
+def osmm_WatchRead():
+    wlist=[]
+    try:
+        with open(WATCH_LIST, 'r') as wfile:
+            wlist = wfile.read().splitlines()
+    except FileNotFoundError:
+        pass
+
+    return wlist
+
+def osmm_WatchWrite(wlist):
+    with open(WATCH_LIST, 'w') as wfile:
+        wfile.writelines("%s\n" % l for l in wlist)
