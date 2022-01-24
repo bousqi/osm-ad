@@ -6,18 +6,14 @@ g_indexes = None
 g_order = None
 g_watchlist = []
 
-OUTPUT_DIR = "./assets/"
+ASSETS_DIR = "./assets/"
+OUTPUT_DIR = "./out/"
 
 '''
 TODO list :
- - Commands to create :
-    * Add item to watch list
-    * View items in watch list
-    * Download & Extract items
-    * Clear watch list
- - Write watch list to a file
- - Read watch list from file
- - Extract item, and remove _2 suffix
+ - Extract item, 
+    * remove _2 suffix
+    * use appropriate subdir
 '''
 
 # --------------------------------------------------------------------------
@@ -80,7 +76,7 @@ def _already_downloaded(item):
     if item is None:
         return True
 
-    filename = OUTPUT_DIR + item["@name"]
+    filename = ASSETS_DIR + item["@name"]
 
     # is file already there ?
     if not os.path.isfile(filename):
@@ -124,8 +120,8 @@ def cli_download(indexes):
     print("Processing download queue : {} item(s)".format(len(indexes)))
 
     # checking assets dir exists before using it
-    if not os.path.isdir(OUTPUT_DIR):
-        os.mkdir(OUTPUT_DIR)
+    if not os.path.isdir(ASSETS_DIR):
+        os.mkdir(ASSETS_DIR)
 
     for index, item in enumerate(indexes):
         filename = item["@name"]
@@ -149,7 +145,7 @@ def cli_download(indexes):
         block_size = 1024
         initial_pos = 0
         mode = 'wb'
-        file = OUTPUT_DIR + filename
+        file = ASSETS_DIR + filename
 
         # creating output file
         with open(file, mode) as f:
@@ -167,6 +163,10 @@ def cli_expand(indexes):
     if indexes is None:
         print("Nothing to download.")
         return
+
+    # checking output dir exists before using it
+    if not os.path.isdir(OUTPUT_DIR):
+        os.mkdir(OUTPUT_DIR)
 
     print("Expanding : {} item(s)".format(len(indexes)))
     for index, item in enumerate(indexes):
@@ -220,8 +220,12 @@ def watch(list, clear, wadd, wdel):
             _watch_write()
             click.echo("DONE : 1 item added to watch list, {} total".format(len(g_watchlist)))
         elif wdel is not None:
-            pass
-
+            if wdel not in g_watchlist:
+                click.echo("ERROR: {} not in watchlist. Use watch -l command to check".format(wadd))
+                return 1
+            g_watchlist.remove(wdel)
+            _watch_write()
+            click.echo("DONE : 1 item removed from watch list, {} left".format(len(g_watchlist)))
 
 
 @cli.command()  # @cli, not @click!
