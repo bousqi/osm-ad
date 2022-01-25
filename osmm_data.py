@@ -8,7 +8,7 @@ import xmltodict
 REMOTE = "https://download.osmand.net"
 # INDEX_FILE="/get_indexes?gzip"
 INDEX_FILE = "/get_indexes"
-DOWNLOAD_FILE = "/download?event=2&file="
+DOWNLOAD_FILE = "/download?file="
 
 CACHE_DIR = "cache/"
 CACHE_FILENAME = CACHE_DIR+"indexes.xml"
@@ -19,24 +19,51 @@ WATCH_LIST = CACHE_DIR+"watch.list"
 NOAREA_CATS = ["fonts", "depth", "voice"]
 FILE_PREFIXES = ["Hillshade", "Slope"]
 
+OUT_DIRS = {
+    'depth': '',
+    'fonts' : 'fonts/',
+    'hillshade' : 'tiles/',
+    'map': '',
+    'road_map' : 'roads/',
+    'slope' : 'tiles/',
+    'srtm_map' : 'srtm/',
+    'travel' : 'travel/',
+    'voice' : 'voice/',
+    'wikimap' : 'wiki/',
+    'wikivoyage' : 'travel/',
+}
+
 def osmm_FeedIndex():
+    global CACHE_ONLY
+
     # checking cache dir exists before using it
     if not os.path.isdir(CACHE_DIR):
         os.mkdir(CACHE_DIR)
 
+    # first try
+    if not CACHE_ONLY:
+        try:
+            r = requests.get(REMOTE + INDEX_FILE)
+            dict_data = xmltodict.parse(r.content)
+            with open(CACHE_FILENAME, "wb") as f_index:
+                f_index.write(r.content)
+        except:
+            print("ERROR: Failed to feed indexes. Using cache")
+            CACHE_ONLY = True
+
+    # plan b ?
     if CACHE_ONLY:
         with open(CACHE_FILENAME, "rb") as f_index:
             dict_data = xmltodict.parse(f_index.read())
-    else:
-        r = requests.get(REMOTE + INDEX_FILE)
-        with open(CACHE_FILENAME, "wb") as f_index:
-            f_index.write(r.content)
-        dict_data = xmltodict.parse(r.content)
 
     return dict_data
 
+
 def osmm_ProcessIndexes(indexes):
     osmmIndexes = list()
+
+    if indexes is None:
+        return None
 
     # osmmIndexes = {category : "TBC" for category in indexes["osmand_regions"] if not category.startswith("@") }
     indexes = indexes["osmand_regions"]
@@ -59,6 +86,7 @@ def osmm_ProcessIndexes(indexes):
 
     return osmmIndexes
 
+
 def osmm_ExtractArea(filename, cat):
     # no country for depth category
     if cat in NOAREA_CATS:
@@ -70,8 +98,25 @@ def osmm_ExtractArea(filename, cat):
             filename = filename.replace(prefix+"_", "")
     return filename.split("_")[0]
 
+
+def osmm_OutputDir(item):
+    cat = item["@type"]
+    if cat not in OUT_DIRS:
+        return ""
+
+    # path depends on type
+    path = OUT_DIRS[cat]
+
+    # for voice type, subfolder required
+    if cat == "voice":
+        path = path + item["@name"].replace("_0.voice.zip", "/")
+
+    return path
+
+
 def osmm_GetCategories(indexes):
     return sorted(set([item["@type"] for item in indexes]))
+
 
 def osmm_GetCountries(indexes, cat = None):
     if cat is not None:
@@ -79,6 +124,7 @@ def osmm_GetCountries(indexes, cat = None):
     else:
         filtered_indexes = indexes
     return sorted(set([item["@country"] for item in filtered_indexes]))
+
 
 def osmm_GetItem(indexes, filename):
     if filename is None or indexes is None:
@@ -91,9 +137,11 @@ def osmm_GetItem(indexes, filename):
     # not found
     return None
 
+
 def osmm_GetFiles(indexes, cat, country = None):
     filtered_indexes = osmm_FilterIndex(indexes, cat, country)
     return sorted(set([item["@name"] for item in filtered_indexes]))
+
 
 def osmm_FilterIndex(indexes, cat = None, country = None, toget = None):
     if cat is None and country is None and toget is None:
@@ -118,15 +166,20 @@ def osmm_FilterIndex(indexes, cat = None, country = None, toget = None):
 
     return filtered_indexes
 
+
 def osmm_SetDownload(indexes, filename, state = True):
     for item in indexes:
         if item["@name"] == filename:
             item["@ossm_get"] = state
+
+
 def osmm_UnsetDownload(indexes, filename):
     osmm_SetDownload(indexes, filename, False)
 
+
 def osmm_GetDownloads(indexes):
     return osmm_FilterIndex(indexes, toget=True)
+
 
 def osmm_WatchRead():
     wlist=[]
@@ -137,6 +190,7 @@ def osmm_WatchRead():
         pass
 
     return wlist
+
 
 def osmm_WatchWrite(wlist):
     with open(WATCH_LIST, 'w') as wfile:

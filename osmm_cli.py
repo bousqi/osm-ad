@@ -1,3 +1,6 @@
+import glob, shutil, zipfile
+from pathlib import Path
+
 from tqdm import *
 import click, requests, datetime, os.path
 import osmm_data
@@ -11,9 +14,6 @@ OUTPUT_DIR = "./out/"
 
 '''
 TODO list :
- - Extract item, 
-    * remove _2 suffix
-    * use appropriate subdir
 '''
 
 # --------------------------------------------------------------------------
@@ -25,6 +25,7 @@ def _assets_feed(from_cache = False):
     osmm_data.CACHE_ONLY = from_cache
     g_indexes = osmm_data.osmm_ProcessIndexes(osmm_data.osmm_FeedIndex())
     return g_indexes
+
 
 def cli_print_header():
     print("{:^10} | {:^9} | {:^10} | {}".format("Type", "Size", "Date", "Name"))
@@ -144,6 +145,7 @@ def cli_download(indexes):
 
         # requesting file
         r = requests.get(url, stream=True)
+        # click.echo(url)
 
         # Set configuration
         block_size = 1024
@@ -151,32 +153,73 @@ def cli_download(indexes):
         mode = 'wb'
         file = ASSETS_DIR + filename
 
-        # creating output file
-        with open(file, mode) as f:
-            # creating progress bar
-            with tqdm(total=file_size, unit='B', unit_scale=True, unit_divisor=1024,
-                      desc="{}/{} - {:<40}".format(index+1, len(indexes), filename),
-                      initial=initial_pos, miniters=1, dynamic_ncols=True) as pbar:
-                # getting stream chunks to write
-                for chunk in r.iter_content(32 * block_size):
-                    f.write(chunk)
-                    pbar.update(len(chunk))
+        try:
+            # creating output file
+            with open(file, mode) as f:
+                # creating progress bar
+                with tqdm(total=file_size, unit='B', unit_scale=True, unit_divisor=1024,
+                          desc="{}/{} - {:<40}".format(index+1, len(indexes), filename),
+                          initial=initial_pos, miniters=1, dynamic_ncols=True) as pbar:
+                    # getting stream chunks to write
+                    for chunk in r.iter_content(32 * block_size):
+                        f.write(chunk)
+                        pbar.update(len(chunk))
+        except requests.exceptions.Timeout as e:
+            # Maybe set up for a retry, or continue in a retry loop
+            click.echo("ERROR: " + e)
+        except requests.exceptions.TooManyRedirects as e:
+            # Tell the user their URL was bad and try a different one
+            click.echo("ERROR: " + e)
+        except requests.exceptions.RequestException as e:
+            # catastrophic error, try next
+            pass
 
     return new_indexes
 
+
 def cli_expand(indexes):
     if indexes is None:
-        print("Nothing to download.")
+        print("Nothing to Expand/Copy.")
         return
 
     # checking output dir exists before using it
     if not os.path.isdir(OUTPUT_DIR):
         os.mkdir(OUTPUT_DIR)
 
-    print("Expanding : {} item(s)".format(len(indexes)))
+    # expanding
+    print("Expanding/Copying : {} item(s)".format(len(indexes)))
     for index, item in enumerate(indexes):
-        print("{}/{} : {}".format(index+1, len(indexes), item["@name"]))
+        asset_dir = OUTPUT_DIR + osmm_data.osmm_OutputDir(item)
 
+        # creating asset output dir
+        if not os.path.isdir(asset_dir):
+            Path(asset_dir).mkdir(parents=True, exist_ok=True)
+
+        asset_filename = item["@name"]
+        print("{}/{} : {} in {}".format(index+1, len(indexes), asset_filename, asset_dir))
+
+        if asset_filename.endswith(".zip"):
+            try:
+                # zip file handler
+                asset_zip = zipfile.ZipFile(ASSETS_DIR + asset_filename)
+
+                # list available files in the container
+                # print(asset_zip.namelist())
+
+                asset_zip.extractall(asset_dir)
+            except zipfile.BadZipFile:
+                click.echo("ERROR: Corrupted/Incomplete Zipfile")
+        else:
+            # copying file
+            shutil.copyfile(ASSETS_DIR+asset_filename, asset_dir+asset_filename)
+
+    # renaming
+    to_rename = glob.glob(OUTPUT_DIR + "*_2.*")
+    print("Updating names : {} item(s)".format(len(to_rename)))
+    print(to_rename)
+
+    for file in to_rename:
+        os.rename(file, file.replace("_2.", "."))
 
 # --------------------------------------------------------------------------
 
