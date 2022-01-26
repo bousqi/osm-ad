@@ -11,6 +11,7 @@ g_watchlist = []
 
 ASSETS_DIR = "./assets/"
 OUTPUT_DIR = "./out/"
+# USER_AGENT = {'User-agent': 'okhttp/3.10.0'}
 USER_AGENT = {'User-agent': 'OsmAnd'}
 
 
@@ -115,7 +116,7 @@ def _watch_apply(indexes):
         osmm_data.osmm_SetDownload(indexes, name)
 
 
-def cli_download(indexes):
+def cli_download(indexes, no_prog):
     if indexes is None:
         print("Nothing to download.")
         return
@@ -133,7 +134,7 @@ def cli_download(indexes):
 
         # item to download ?
         if _already_downloaded(item):
-            print("{:>2}/{:>2} - {:<40} - NO_UPDATE".format(index+1, len(indexes), filename))
+            print("{:>2}/{:>2} - {:<50} - NO_UPDATE".format(index+1, len(indexes), filename))
             continue
 
         # to download !
@@ -158,11 +159,11 @@ def cli_download(indexes):
             if r and r.status_code == requests.codes.ok:
                 break;
 
-            click.echo("{:>2}/{:>2} - {:<40} - Retry {}".format(index+1, len(indexes), filename, retry+1))
+            click.echo("{:>2}/{:>2} - {:<50} - Retry {}".format(index+1, len(indexes), filename, retry+1))
 
         # has one try succeeded ?
         if r is None or r.status_code != requests.codes.ok:
-            click.echo("{:>2}/{:>2} - {:<40} - ERROR 404, not found".format(index+1, len(indexes), filename))
+            click.echo("{:>2}/{:>2} - {:<50} - ERROR 404, not found".format(index+1, len(indexes), filename))
             click.echo("{} > {}".format(" "*46, url))
             continue
 
@@ -180,12 +181,19 @@ def cli_download(indexes):
             with open(file, mode) as f:
                 # creating progress bar
                 with tqdm(total=file_size, unit='B', unit_scale=True, unit_divisor=1024,
-                          desc="{:>2}/{:>2} - {:<40}".format(index+1, len(indexes), filename),
+                          desc="{:>2}/{:>2} - {:<50}".format(index+1, len(indexes), filename),
                           initial=initial_pos, miniters=1, dynamic_ncols=True) as pbar:
                     # getting stream chunks to write
                     for chunk in r.iter_content(32 * block_size):
                         f.write(chunk)
+                        if not no_prog:
+                            pbar.update(len(chunk))
+
+                    if no_prog:
+                        # only one update at the end
                         pbar.update(len(chunk))
+                        click.echo("{:>2}/{:>2} - {:<50} - 100%".format(index+1, len(indexes), filename))
+
         except requests.exceptions.Timeout as e:
             # Maybe set up for a retry, or continue in a retry loop
             click.echo("ERROR: " + e)
@@ -201,7 +209,7 @@ def cli_download(indexes):
 
 def cli_expand(indexes):
     if indexes is None:
-        print("Nothing to Expand/Copy.")
+        click.echo("Nothing to Expand/Copy.")
         return
 
     # checking output dir exists before using it
@@ -244,7 +252,12 @@ def cli_expand(indexes):
     # click.echo(to_rename)
 
     for file in to_rename:
-        os.rename(file, file.replace("_2.", "."))
+        dest_name = file.replace("_2.", ".")
+
+        if os.path.isfile(dest_name):
+            os.remove(dest_name)
+
+        os.rename(file, dest_name)
 
 # --------------------------------------------------------------------------
 
@@ -302,7 +315,8 @@ def watch(list, clear, wadd, wdel):
 
 
 @cli.command()  # @cli, not @click!
-def update():
+@click.option('--no-progress', '-n', "no_prog", is_flag=True, type=bool, help="Disable progress bar during download")
+def update(no_prog):
     """Download/Update assets based on watch list"""
 
     # feeding assets
@@ -314,7 +328,7 @@ def update():
 
     # download items
     dl_list = osmm_data.osmm_GetDownloads(indexes)
-    dl_list = cli_download(dl_list)
+    dl_list = cli_download(dl_list, no_prog)
 
     # decompress assets
     cli_expand(dl_list)
