@@ -11,6 +11,8 @@ g_watchlist = []
 
 ASSETS_DIR = "./assets/"
 OUTPUT_DIR = "./out/"
+USER_AGENT = {'User-agent': 'OsmAnd'}
+
 
 '''
 TODO list :
@@ -131,11 +133,10 @@ def cli_download(indexes):
 
         # item to download ?
         if _already_downloaded(item):
-            print("{}/{} - {:<40} - SKIPPED".format(index+1, len(indexes), filename))
+            print("{:>2}/{:>2} - {:<40} - NO_UPDATE".format(index+1, len(indexes), filename))
             continue
 
         # to download !
-        new_indexes.append(item)
         url = osmm_data.REMOTE + osmm_data.DOWNLOAD_FILE + filename
 
         # Getting file size
@@ -144,8 +145,29 @@ def cli_download(indexes):
         file_size = int(item["@containerSize"])
 
         # requesting file
-        r = requests.get(url, stream=True)
-        # click.echo(url)
+        url = osmm_data.osmm_GetDownloadURL(item)
+
+        # giving 3 tries to get the file
+        for retry in range(3):
+            try:
+                r = requests.get(url, headers=USER_AGENT, stream=True)
+                # click.echo(url)
+            except requests.exceptions.ConnectionError:
+                r = None
+
+            if r and r.status_code == requests.codes.ok:
+                break;
+
+            click.echo("{:>2}/{:>2} - {:<40} - Retry {}".format(index+1, len(indexes), filename, retry+1))
+
+        # has one try succeeded ?
+        if r is None or r.status_code != requests.codes.ok:
+            click.echo("{:>2}/{:>2} - {:<40} - ERROR 404, not found".format(index+1, len(indexes), filename))
+            click.echo("{} > {}".format(" "*46, url))
+            continue
+
+        # added to list of downloaded
+        new_indexes.append(item)
 
         # Set configuration
         block_size = 1024
@@ -158,7 +180,7 @@ def cli_download(indexes):
             with open(file, mode) as f:
                 # creating progress bar
                 with tqdm(total=file_size, unit='B', unit_scale=True, unit_divisor=1024,
-                          desc="{}/{} - {:<40}".format(index+1, len(indexes), filename),
+                          desc="{:>2}/{:>2} - {:<40}".format(index+1, len(indexes), filename),
                           initial=initial_pos, miniters=1, dynamic_ncols=True) as pbar:
                     # getting stream chunks to write
                     for chunk in r.iter_content(32 * block_size):
@@ -187,7 +209,7 @@ def cli_expand(indexes):
         os.mkdir(OUTPUT_DIR)
 
     # expanding
-    print("Expanding/Copying : {} item(s)".format(len(indexes)))
+    print("\nExpanding/Copying : {} item(s)".format(len(indexes)))
     for index, item in enumerate(indexes):
         asset_dir = OUTPUT_DIR + osmm_data.osmm_OutputDir(item)
 
@@ -196,7 +218,7 @@ def cli_expand(indexes):
             Path(asset_dir).mkdir(parents=True, exist_ok=True)
 
         asset_filename = item["@name"]
-        print("{}/{} : {} in {}".format(index+1, len(indexes), asset_filename, asset_dir))
+        print("{:>2}/{:>2} : {} in {}".format(index+1, len(indexes), asset_filename, asset_dir))
 
         if asset_filename.endswith(".zip"):
             try:
@@ -215,8 +237,11 @@ def cli_expand(indexes):
 
     # renaming
     to_rename = glob.glob(OUTPUT_DIR + "*_2.*")
-    print("Updating names : {} item(s)".format(len(to_rename)))
-    print(to_rename)
+    to_rename_subdir = glob.glob(OUTPUT_DIR + "*/*_2.*")
+    to_rename.extend(to_rename_subdir)
+
+    click.echo("\nUpdating names : {} item(s)".format(len(to_rename)))
+    # click.echo(to_rename)
 
     for file in to_rename:
         os.rename(file, file.replace("_2.", "."))
@@ -249,7 +274,7 @@ def watch(list, clear, wadd, wdel):
 
         # dumping list
         for index, item in enumerate(g_watchlist):
-            print("{}/{} - {}".format(index+1, len(g_watchlist), item))
+            print("{:>2}/{} - {}".format(index+1, len(g_watchlist), item))
     elif clear:
         # clearing list
         g_watchlist = []
@@ -293,6 +318,9 @@ def update():
 
     # decompress assets
     cli_expand(dl_list)
+
+    if len(dl_list):
+        click.echo("\nDone !")
 
 
 @cli.command()  # @cli, not @click!

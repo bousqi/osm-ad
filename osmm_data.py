@@ -19,19 +19,20 @@ WATCH_LIST = CACHE_DIR+"watch.list"
 NOAREA_CATS = ["fonts", "depth", "voice"]
 FILE_PREFIXES = ["Hillshade", "Slope"]
 
-OUT_DIRS = {
-    'depth': '',
-    'fonts' : 'fonts/',
-    'hillshade' : 'tiles/',
-    'map': '',
-    'road_map' : 'roads/',
-    'slope' : 'tiles/',
-    'srtm_map' : 'srtm/',
-    'travel' : 'travel/',
-    'voice' : 'voice/',
-    'wikimap' : 'wiki/',
-    'wikivoyage' : 'travel/',
+TYPE_ATTRIB = {
+    "depth":     {"out": "",         "suffix" : "&inapp=depth"},
+    "fonts":     {"out": "fonts/",   "suffix" : "&fonts=yes"},
+    "hillshade": {"out": "tiles/",   "suffix" : "&hillshade=yes"},
+    "map":       {"out": "",         "suffix" : ""},
+    "road_map":  {"out": "roads/",   "suffix" : "&road=yes"},
+    "slope":     {"out": "tiles/",   "suffix" : "&slope=yes"},
+    "srtm_map":  {"out": "srtm/",    "suffix" : "&srtmcountry=yes"},
+    "travel":    {"out": "travel/",  "suffix" : "&wikivoyage=yes"},
+    "voice":     {"out": "voice/",   "suffix" : ""},
+    "wikimap":   {"out": "wiki/",    "suffix" : "&wiki=yes"},
+    "wikivoyage":{"out": "travel/",  "suffix" : "&wikivoyage=yes"},
 }
+
 
 def osmm_FeedIndex():
     global CACHE_ONLY
@@ -101,11 +102,11 @@ def osmm_ExtractArea(filename, cat):
 
 def osmm_OutputDir(item):
     cat = item["@type"]
-    if cat not in OUT_DIRS:
+    if cat not in TYPE_ATTRIB:
         return ""
 
     # path depends on type
-    path = OUT_DIRS[cat]
+    path = TYPE_ATTRIB[cat]["out"]
 
     # for voice type, subfolder required
     if cat == "voice":
@@ -180,6 +181,12 @@ def osmm_UnsetDownload(indexes, filename):
 def osmm_GetDownloads(indexes):
     return osmm_FilterIndex(indexes, toget=True)
 
+
+def osmm_GetDownloadURL(item):
+    cat = item["@type"]
+    url = REMOTE + DOWNLOAD_FILE + item["@name"] + TYPE_ATTRIB[cat]["suffix"]
+
+    return url
 
 def osmm_WatchRead():
     wlist=[]
