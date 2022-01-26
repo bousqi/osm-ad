@@ -191,8 +191,7 @@ def cli_download(indexes, no_prog):
 
                     if no_prog:
                         # only one update at the end
-                        pbar.update(len(chunk))
-                        click.echo("{:>2}/{:>2} - {:<50} - 100%".format(index+1, len(indexes), filename))
+                        pbar.update(file_size)
 
         except requests.exceptions.Timeout as e:
             # Maybe set up for a retry, or continue in a retry loop
