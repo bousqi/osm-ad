@@ -9,9 +9,8 @@ g_indexes = None
 g_order = None
 g_watchlist = []
 
-ASSETS_DIR = "./assets/"
-OUTPUT_DIR = "./out/"
-# USER_AGENT = {'User-agent': 'okhttp/3.10.0'}
+ASSETS_DIR = "assets/"
+OUTPUT_DIR = "out/"
 USER_AGENT = {'User-agent': 'OsmAnd'}
 
 
@@ -125,7 +124,7 @@ def cli_download(indexes, no_prog):
 
     # checking assets dir exists before using it
     if not os.path.isdir(ASSETS_DIR):
-        os.mkdir(ASSETS_DIR)
+        Path(ASSETS_DIR).mkdir(parents=True, exist_ok=True)
 
     # tracking new items
     new_indexes = []
@@ -213,7 +212,7 @@ def cli_expand(indexes):
 
     # checking output dir exists before using it
     if not os.path.isdir(OUTPUT_DIR):
-        os.mkdir(OUTPUT_DIR)
+        Path(OUTPUT_DIR).mkdir(parents=True, exist_ok=True)
 
     # expanding
     print("\nExpanding/Copying : {} item(s)".format(len(indexes)))
@@ -262,7 +261,17 @@ def cli_expand(indexes):
 
 
 @click.group()
-def cli():
+@click.option('--cache-dir',  '-cd', "cache_dir", type=click.Path(dir_okay=True, file_okay=False, readable=True, writable=True, exists=False), default=None, help="Path where to find cache files")
+@click.option('--download-dir', '-dd', "ddl_dir", type=click.Path(dir_okay=True, file_okay=False, readable=True, writable=True, exists=False), default=None, help="Path where to download and extract assets")
+def cli(cache_dir, ddl_dir):
+    global ASSETS_DIR, OUTPUT_DIR
+
+    if cache_dir:
+        osmm_data.CACHE_DIR = os.path.join(cache_dir, '')
+
+    if ddl_dir:
+        OUTPUT_DIR = os.path.join(ddl_dir, OUTPUT_DIR)
+        ASSETS_DIR = os.path.join(ddl_dir, ASSETS_DIR)
     pass
 
 

@@ -11,10 +11,10 @@ INDEX_FILE = "/get_indexes"
 DOWNLOAD_FILE = "/download?file="
 
 CACHE_DIR = "cache/"
-CACHE_FILENAME = CACHE_DIR+"indexes.xml"
+CACHE_FILENAME = "indexes.xml"
 CACHE_ONLY = True
 # CACHE_ONLY = False
-WATCH_LIST = CACHE_DIR+"watch.list"
+WATCH_LIST = "watch.list"
 
 NOAREA_CATS = ["fonts", "depth", "voice"]
 FILE_PREFIXES = ["Hillshade", "Slope"]
@@ -46,7 +46,7 @@ def osmm_FeedIndex():
         try:
             r = requests.get(REMOTE + INDEX_FILE)
             dict_data = xmltodict.parse(r.content)
-            with open(CACHE_FILENAME, "wb") as f_index:
+            with open(CACHE_DIR + CACHE_FILENAME, "wb") as f_index:
                 f_index.write(r.content)
         except:
             print("ERROR: Failed to feed indexes. Using cache")
@@ -54,7 +54,7 @@ def osmm_FeedIndex():
 
     # plan b ?
     if CACHE_ONLY:
-        with open(CACHE_FILENAME, "rb") as f_index:
+        with open(CACHE_DIR + CACHE_FILENAME, "rb") as f_index:
             dict_data = xmltodict.parse(f_index.read())
 
     return dict_data
@@ -191,7 +191,7 @@ def osmm_GetDownloadURL(item):
 def osmm_WatchRead():
     wlist=[]
     try:
-        with open(WATCH_LIST, 'r') as wfile:
+        with open(CACHE_DIR + WATCH_LIST, 'r') as wfile:
             wlist = wfile.read().splitlines()
     except FileNotFoundError:
         pass
@@ -200,5 +200,5 @@ def osmm_WatchRead():
 
 
 def osmm_WatchWrite(wlist):
-    with open(WATCH_LIST, 'w') as wfile:
+    with open(CACHE_DIR + WATCH_LIST, 'w') as wfile:
         wfile.writelines("%s\n" % l for l in wlist)
