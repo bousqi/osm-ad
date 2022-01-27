@@ -13,6 +13,7 @@ ASSETS_DIR = "assets/"
 OUTPUT_DIR = "out/"
 USER_AGENT = {'User-agent': 'OsmAnd'}
 
+CLI_VERSION = "0.9.1"
 
 '''
 TODO list :
@@ -261,9 +262,10 @@ def cli_expand(indexes):
 
 
 @click.group()
+@click.version_option(CLI_VERSION, prog_name="OpenStreetMap asset downloader")
 @click.option('--cache-dir',  '-cd', "cache_dir", type=click.Path(dir_okay=True, file_okay=False, readable=True, writable=True, exists=False), default=None, help="Path where to find cache files")
 @click.option('--download-dir', '-dd', "ddl_dir", type=click.Path(dir_okay=True, file_okay=False, readable=True, writable=True, exists=False), default=None, help="Path where to download and extract assets")
-def cli(cache_dir, ddl_dir):
+def cli(cache_dir, ddl_dir,):
     global ASSETS_DIR, OUTPUT_DIR
 
     if cache_dir:
@@ -288,7 +290,7 @@ def watch(list, clear, wadd, wdel):
     # reading list
     _watch_read()
 
-    if list:
+    if list or (not list and not clear and not wadd and not wdel):
         if g_watchlist is None or len(g_watchlist) == 0:
             print("List is empty. Use --add")
             return
