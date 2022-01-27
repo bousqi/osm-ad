@@ -1,7 +1,12 @@
-/osmm.py
+# useless dirs
 /__pycache__
-/UNKNOWN.egg-info
 /dist
 /out
 /build
+/venv
+
+# local file
 /cache/watch.list
+
+# ui converted to pytonh
+osmm.py
