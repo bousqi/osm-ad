@@ -59,8 +59,9 @@ class gui_main(QMainWindow, Ui_MainWindow):
         # overloading app behavior
         self.osmm_treeWidget.itemPressed['QTreeWidgetItem*', 'int'].connect(self.toggleDownload_onItem)
         self.updates_cBox.clicked.connect(self.UI_applyFilter)
+        self.grouped_cBox.clicked.connect(self.UI_applyFilter)
 
-        self.actionRefresh.triggered.connect(self.startThreadFeed)
+        self.refreshButton.clicked.connect(self.startThreadFeed)
         self.leFilter.textChanged.connect(self.UI_applyFilter)
         self.UI_displayItemCount()
 
@@ -69,6 +70,18 @@ class gui_main(QMainWindow, Ui_MainWindow):
         self.abortButton.setVisible(False)
         self.progressBar_Total.setVisible(False)
 
+        self.osmm_treeWidget.installEventFilter(self)
+
+
+    def eventFilter(self, obj, event):
+        if obj == self.osmm_treeWidget:
+            if  event.type() == QtCore.QEvent.KeyPress:
+                if event.key() == QtCore.Qt.Key_Delete:
+                    # self.setRemove_onCurrent()
+                    pass
+                elif event.key() == QtCore.Qt.Key_Space:
+                    self.toggleDownload_onCurrent()
+        return super(gui_main, self).eventFilter(obj, event)
 
     def reportProgress(self, n):
         self.progressBar_Total.setValue(n)
@@ -112,10 +125,12 @@ class gui_main(QMainWindow, Ui_MainWindow):
         # empty the list
         self.osmm_treeWidget.clear()
 
-        # fill TreeWidget as a tree
-        self.dispAssetsTreeLvl1()
-        # fill TreeWidget as a list
-        # self.dispAssetsSimple()
+        if self.grouped_cBox.checkState():
+            # fill TreeWidget as a tree
+            self.dispAssetsTreeLvl1()
+        else:
+            # fill TreeWidget as a list
+            self.dispAssetsSimple()
 
         self.osmm_treeWidget.setColumnWidth(COL_TYPE, 100)
         self.osmm_treeWidget.setColumnWidth(COL_NAME, 300)
@@ -127,7 +142,7 @@ class gui_main(QMainWindow, Ui_MainWindow):
         #
         self.osmm_treeWidget.expandAll()
 
-        self.osmm_treeWidget.sortItems(COL_NAME, QtCore.Qt.AscendingOrder)
+        self.osmm_treeWidget.sortItems(COL_TYPE, QtCore.Qt.AscendingOrder)
         self.osmm_treeWidget.resizeColumnToContents(COL_TYPE)
 
         self.UI_displayItemCount()
@@ -231,9 +246,13 @@ class gui_main(QMainWindow, Ui_MainWindow):
             self.osmm_treeWidget.addTopLevelItem(item)
 
     def UI_displayItemCount(self):
-        self.statusbar.showMessage("{} - {}/{}     (Disp - Download/Total)".format(self.osmm_treeWidget.size,
+        self.statusbar.showMessage("{} - {}/{}     (Disp - Download/Total)".format(self.osmm_treeWidget.topLevelItemCount(),
                                                                                    len(osmm_GetDownloads(self.indexes)),
                                                                                    len(self.indexes)))
+
+    def toggleDownload_onCurrent(self):
+        selectedItem = self.osmm_treeWidget.currentItem()
+        self.toggleDownload_onItem(selectedItem, COL_DOWN)
 
     def toggleDownload_onItem(self, item, column):
         if column != COL_DOWN:
@@ -243,7 +262,7 @@ class gui_main(QMainWindow, Ui_MainWindow):
             return
 
         # this item is a categorie
-        if item.parent() is None:
+        if self.grouped_cBox.checkState() and item.parent() is None:
             return
 
         # inverting check state
@@ -262,13 +281,9 @@ class gui_main(QMainWindow, Ui_MainWindow):
             item.setCheckState(COL_DOWN, QtCore.Qt.Checked)
             brush = QtGui.QBrush(QtGui.QColor(170, 0, 0, 25))
             brush.setStyle(QtCore.Qt.DiagCrossPattern)
-            item.setBackground(0, brush)
-            item.setBackground(1, brush)
-            item.setBackground(2, brush)
         else:
             item.setCheckState(COL_DOWN, QtCore.Qt.Unchecked)
             brush = QtGui.QBrush(QtGui.QColor(0, 0, 0, 255))
             brush.setStyle(QtCore.Qt.NoBrush)
-            item.setBackground(0, brush)
-            item.setBackground(1, brush)
-            item.setBackground(2, brush)
+        for i in range(COL_DOWN):
+            item.setBackground(i, brush)
