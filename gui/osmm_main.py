@@ -113,9 +113,9 @@ class gui_main(QMainWindow, Ui_MainWindow):
         self.osmm_treeWidget.clear()
 
         # fill TreeWidget as a tree
-        # self.dispAssetsTree()
+        self.dispAssetsTreeLvl1()
         # fill TreeWidget as a list
-        self.dispAssetsSimple()
+        # self.dispAssetsSimple()
 
         self.osmm_treeWidget.setColumnWidth(COL_TYPE, 100)
         self.osmm_treeWidget.setColumnWidth(COL_NAME, 300)
@@ -123,9 +123,12 @@ class gui_main(QMainWindow, Ui_MainWindow):
         self.osmm_treeWidget.setColumnWidth(COL_COMP, 100)
         self.osmm_treeWidget.setColumnWidth(COL_SIZE, 100)
         self.osmm_treeWidget.setColumnWidth(COL_DOWN, 20)
-        # self.osmm_treeWidget.collapseAll()
+
+        #
+        self.osmm_treeWidget.expandAll()
 
         self.osmm_treeWidget.sortItems(COL_NAME, QtCore.Qt.AscendingOrder)
+        self.osmm_treeWidget.resizeColumnToContents(COL_TYPE)
 
         self.UI_displayItemCount()
 
@@ -155,6 +158,47 @@ class gui_main(QMainWindow, Ui_MainWindow):
             self.osmm_treeWidget.addTopLevelItem(item)
 
         pass
+
+    def dispAssetsTreeLvl1(self):
+        filter = self.leFilter.text()
+        updates_only = self.updates_cBox.isChecked()
+
+        tree_root = {}
+
+        # adding items
+        for osmm_item in self.indexes:
+            if filter is not None and filter.lower() not in osmm_item["@name"].lower():
+                continue
+            if updates_only and ("@osmm_get" not in osmm_item or not osmm_item["@osmm_get"]):
+                continue
+
+            cat = osmm_item["@type"]
+            if cat not in tree_root:
+                root_item = AssetTreeWidgetItem()
+                root_item.setText(COL_TYPE, cat)
+                tree_root[cat] = root_item
+            else:
+                root_item = tree_root[cat]
+
+            item = AssetTreeWidgetItem(root_item)
+            item.setText(COL_TYPE, osmm_item["@country"])
+            item.setText(COL_NAME, osmm_item["@name"])
+            item.setText(COL_DATE, osmm_item["@date"])
+            item.setText(COL_COMP, osmm_item["@size"] + " MB")
+            item.setTextAlignment(COL_COMP, QtCore.Qt.AlignRight)
+
+            item.setText(COL_SIZE, osmm_item["@targetsize"] + " MB")
+            item.setTextAlignment(COL_SIZE, QtCore.Qt.AlignRight)
+            item.setFlags(QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled)
+
+            if "@osmm_get" in osmm_item and osmm_item["@osmm_get"]:
+                item.setCheckState(COL_DOWN, QtCore.Qt.Checked)
+            else:
+                item.setCheckState(COL_DOWN, QtCore.Qt.Unchecked)
+            item.setTextAlignment(COL_DOWN, QtCore.Qt.AlignCenter)
+
+        for item in tree_root:
+            self.osmm_treeWidget.addTopLevelItem(tree_root[item])
 
     def dispAssetsSimple(self):
         filter = self.leFilter.text()
@@ -187,7 +231,7 @@ class gui_main(QMainWindow, Ui_MainWindow):
             self.osmm_treeWidget.addTopLevelItem(item)
 
     def UI_displayItemCount(self):
-        self.statusbar.showMessage("{} - {}/{}     (Disp - Download/Total)".format(len(self.indexes),
+        self.statusbar.showMessage("{} - {}/{}     (Disp - Download/Total)".format(self.osmm_treeWidget.size,
                                                                                    len(osmm_GetDownloads(self.indexes)),
                                                                                    len(self.indexes)))
 
@@ -198,6 +242,11 @@ class gui_main(QMainWindow, Ui_MainWindow):
         if item is None:
             return
 
+        # this item is a categorie
+        if item.parent() is None:
+            return
+
+        # inverting check state
         state = not item.checkState(COL_DOWN)
 
         osmm_data.osmm_SetDownload(self.indexes, item.text(COL_NAME), state)

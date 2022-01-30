@@ -6,10 +6,26 @@ maps when available.
 
 
 ## HowTo
+
+### Build
+
+#### CLI
+#### GUI
+##### Generate UIs
+##### Generate Res file
+
+
 ### Create native executable
+#### CLI
 ```
-$ python setup.py install
-$ python setup.py py2exe
+$ pyinstaller osmm_cli.spec
 ...
 $ dist\osmm_cli.exe
+```
+
+#### GUI
+```
+$ pyinstaller osmm_gui.spec
+...
+$ dist\osmm_gui.exe
 ```

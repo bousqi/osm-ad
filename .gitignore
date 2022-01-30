@@ -1,12 +1,14 @@
 # useless dirs
-/__pycache__
+**/__pycache__
 /dist
 /out
 /build
 /venv
+res/*
 
 # local file
 /cache/watch.list
 
 # gui converted to pytonh
-osmm.py
+gui/*.py
+osmm_res_rc.py

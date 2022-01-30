@@ -12,10 +12,13 @@ class AssetTreeWidgetItem(QtWidgets.QTreeWidgetItem):
         column = self.treeWidget().sortColumn()
         # Size compare
         if column == gui.osmm_main.COL_SIZE or column == gui.osmm_main.COL_COMP:
-            return float(self.text(column).split(' ')[0]) < float(otherItem.text(column).split(' ')[0])
+            if self.text(column) != "" and otherItem.text(column) != "":
+                return float(self.text(column).split(' ')[0]) < float(otherItem.text(column).split(' ')[0])
+
         # date compare
         if column == gui.osmm_main.COL_DATE:
-            return datetime.strptime(self.text(column), '%d.%m.%Y') < datetime.strptime(otherItem.text(column), '%d.%m.%Y')
+            if self.text(column) != "" and otherItem.text(column) != "":
+                return datetime.strptime(self.text(column), '%d.%m.%Y') < datetime.strptime(otherItem.text(column), '%d.%m.%Y')
 
         # extended sorting on type
         if column == gui.osmm_main.COL_TYPE:

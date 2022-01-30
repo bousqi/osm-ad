@@ -1,6 +1,6 @@
 from PyQt5.QtWidgets import QApplication
-from gui.osmm_main import gui_main
 import sys
+from gui.osmm_main import gui_main
 
 """
 URLS to help :
