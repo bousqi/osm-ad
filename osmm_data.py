@@ -171,7 +171,7 @@ def osmm_FilterIndex(indexes, cat = None, country = None, toget = None):
 def osmm_SetDownload(indexes, filename, state = True):
     for item in indexes:
         if item["@name"] == filename:
-            item["@ossm_get"] = state
+            item["@osmm_get"] = state
 
 
 def osmm_UnsetDownload(indexes, filename):
