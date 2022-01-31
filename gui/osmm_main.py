@@ -5,6 +5,7 @@ from PyQt5.QtWidgets import QMainWindow
 
 import osmm_data
 from gui.AssetTreeWidgetItem import AssetTreeWidgetItem
+from gui.about import Ui_About
 from gui.main import *
 from osmm_data import *
 
@@ -72,6 +73,14 @@ class gui_main(QMainWindow, Ui_MainWindow):
 
         self.osmm_treeWidget.installEventFilter(self)
 
+        # about modal config
+        self.aboutButton.clicked.connect(self.showAbout)
+
+    def showAbout(self):
+        About = QtWidgets.QDialog()
+        ui = Ui_About()
+        ui.setupUi(About)
+        About.exec_()
 
     def eventFilter(self, obj, event):
         if obj == self.osmm_treeWidget:
@@ -230,6 +239,8 @@ class gui_main(QMainWindow, Ui_MainWindow):
             item.setText(COL_TYPE, osmm_item["@type"])
             item.setText(COL_NAME, osmm_item["@name"])
             item.setText(COL_DATE, osmm_item["@date"])
+            item.setTextAlignment(COL_DATE, QtCore.Qt.AlignCenter)
+
             item.setText(COL_COMP, osmm_item["@size"] + " MB")
             item.setTextAlignment(COL_COMP, QtCore.Qt.AlignRight)
 
@@ -246,7 +257,17 @@ class gui_main(QMainWindow, Ui_MainWindow):
             self.osmm_treeWidget.addTopLevelItem(item)
 
     def UI_displayItemCount(self):
-        self.statusbar.showMessage("{} - {}/{}     (Disp - Download/Total)".format(self.osmm_treeWidget.topLevelItemCount(),
+        count = 0
+        if self.grouped_cBox.checkState():
+            # counting children in case of grouping
+            for index in range(self.osmm_treeWidget.topLevelItemCount()):
+                parent = self.osmm_treeWidget.topLevelItem(index)
+                count += parent.childCount()
+        else:
+            # not grouped
+            count = self.osmm_treeWidget.topLevelItemCount()
+
+        self.statusbar.showMessage("{} - {}/{}     (Disp - Download/Total)".format(count,
                                                                                    len(osmm_GetDownloads(self.indexes)),
                                                                                    len(self.indexes)))
 
