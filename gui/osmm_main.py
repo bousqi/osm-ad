@@ -1,3 +1,4 @@
+import time
 from time import sleep
 
 from PyQt5.QtCore import QThread, QObject, pyqtSignal
@@ -29,7 +30,20 @@ TODO :
     - detect updates
 '''
 
-class Worker(QObject):
+
+class WorkerDownload(QObject):
+    finished = pyqtSignal()
+    progress = pyqtSignal(int, int)
+
+    def run(self):
+        for i in range(1000):
+            self.progress.emit(i, 1000)
+            time.sleep(0.005)
+
+        self.finished.emit()
+
+
+class WorkerFeed(QObject):
     finished = pyqtSignal()
     progress = pyqtSignal(int)
 
@@ -63,6 +77,8 @@ class gui_main(QMainWindow, Ui_MainWindow):
         self.grouped_cBox.clicked.connect(self.UI_applyFilter)
 
         self.refreshButton.clicked.connect(self.startThreadFeed)
+        self.downloadButton.clicked.connect(self.startThreadDownload)
+
         self.leFilter.textChanged.connect(self.UI_applyFilter)
         self.UI_displayItemCount()
 
@@ -92,12 +108,37 @@ class gui_main(QMainWindow, Ui_MainWindow):
                     self.toggleDownload_onCurrent()
         return super(gui_main, self).eventFilter(obj, event)
 
-    def reportProgress(self, n):
-        self.progressBar_Total.setValue(n)
-        self.statusbar.showMessage(f"Long-Running Step: {n}")
+    def reportProgress(self, step, total):
+        self.progressBar_Total.setMaximum(total)
+        self.progressBar_Total.setValue(step)
+        self.statusbar.showMessage(f"Long-Running Step: {step}")
 
     def startThreadDownload(self):
-        pass
+        # Step 2: Create a QThread object
+        self.thread = QThread()
+        # Step 3: Create a worker object
+        self.worker = WorkerDownload()
+        # Step 4: Move worker to the thread
+        self.worker.moveToThread(self.thread)
+        # Step 5: Connect signals and slots
+        self.thread.started.connect(self.worker.run)
+        self.worker.finished.connect(self.thread.quit)
+        self.worker.finished.connect(self.worker.deleteLater)
+        self.thread.finished.connect(self.thread.deleteLater)
+
+        self.thread.finished.connect(lambda: self.downloadButton.setEnabled(True))
+        self.thread.finished.connect(lambda: self.refreshButton.setEnabled(True))
+        self.thread.finished.connect(lambda: self.progressBar_Total.setVisible(False))
+        self.thread.finished.connect(self.UI_updateIndexList)
+        self.worker.progress.connect(self.reportProgress)
+
+         # Final resets
+        self.downloadButton.setEnabled(False)
+        self.refreshButton.setEnabled(False)
+        self.progressBar_Total.setVisible(True)
+        self.progressBar_Total.setValue(0)
+        # Step 6: Start the thread
+        self.thread.start()
 
     def startThreadFeed(self):
         self.leFilter.setText("")
@@ -108,7 +149,7 @@ class gui_main(QMainWindow, Ui_MainWindow):
         # Step 2: Create a QThread object
         self.thread = QThread()
         # Step 3: Create a worker object
-        self.worker = Worker()
+        self.worker = WorkerFeed()
         # Step 4: Move worker to the thread
         self.worker.moveToThread(self.thread)
         # Step 5: Connect signals and slots
@@ -117,11 +158,14 @@ class gui_main(QMainWindow, Ui_MainWindow):
         self.worker.finished.connect(self.worker.deleteLater)
         self.thread.finished.connect(self.thread.deleteLater)
 
-        # Final resets
-        self.actionRefresh.setEnabled(False)
-        self.thread.finished.connect(lambda: self.actionRefresh.setEnabled(True))
+        self.thread.finished.connect(lambda: self.downloadButton.setEnabled(True))
+        self.thread.finished.connect(lambda: self.refreshButton.setEnabled(True))
         self.thread.finished.connect(lambda: self.progressBar_Total.setVisible(False))
         self.thread.finished.connect(self.UI_updateIndexList)
+
+        # Final resets
+        self.downloadButton.setEnabled(False)
+        self.refreshButton.setEnabled(False)
         # Step 6: Start the thread
         self.thread.start()
 
