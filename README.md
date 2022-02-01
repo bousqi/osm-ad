@@ -23,7 +23,8 @@ Commands:
   watch    Watch list management
 ````
 ### Graphical User Interface
-    Screenshot.png - TODO
+![](./res/screenshot.png)
+
 ## HowTo
 
 ### Prepare env

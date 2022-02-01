@@ -189,6 +189,9 @@ class gui_main(QMainWindow, Ui_MainWindow):
 
         tree_root = {}
 
+        if self.indexes is None or len(self.indexes) == 0:
+            return
+
         # adding items
         for osmm_item in self.indexes:
             if filter is not None and filter.lower() not in osmm_item["@name"].lower():
@@ -227,6 +230,9 @@ class gui_main(QMainWindow, Ui_MainWindow):
     def dispAssetsSimple(self):
         filter = self.leFilter.text()
         updates_only = self.updates_cBox.isChecked()
+
+        if self.indexes is None or len(self.indexes) == 0:
+            return
 
         # adding items
         for osmm_item in self.indexes:

@@ -12,8 +12,8 @@ DOWNLOAD_FILE = "/download?file="
 
 CACHE_DIR = "cache/"
 CACHE_FILENAME = "indexes.xml"
-CACHE_ONLY = True
-# CACHE_ONLY = False
+# CACHE_ONLY = True
+CACHE_ONLY = False
 WATCH_LIST = "watch.list"
 
 NOAREA_CATS = ["fonts", "depth", "voice"]
@@ -36,6 +36,7 @@ TYPE_ATTRIB = {
 
 def osmm_FeedIndex():
     global CACHE_ONLY
+    dict_data = {}
 
     # checking cache dir exists before using it
     if not os.path.isdir(CACHE_DIR):
@@ -53,7 +54,7 @@ def osmm_FeedIndex():
             CACHE_ONLY = True
 
     # plan b ?
-    if CACHE_ONLY:
+    if CACHE_ONLY and os.path.isfile(CACHE_DIR):
         with open(CACHE_DIR + CACHE_FILENAME, "rb") as f_index:
             dict_data = xmltodict.parse(f_index.read())
 
@@ -63,8 +64,8 @@ def osmm_FeedIndex():
 def osmm_ProcessIndexes(indexes):
     osmmIndexes = list()
 
-    if indexes is None:
-        return None
+    if indexes is None or len(indexes) == 0:
+        return {}
 
     # osmmIndexes = {category : "TBC" for category in indexes["osmand_regions"] if not category.startswith("@") }
     indexes = indexes["osmand_regions"]
@@ -147,6 +148,9 @@ def osmm_GetFiles(indexes, cat, country = None):
 def osmm_FilterIndex(indexes, cat = None, country = None, toget = None):
     if cat is None and country is None and toget is None:
         return indexes
+
+    if indexes is None or len(indexes) == 0:
+        return {}
 
     filtered_indexes = list()
     for item in indexes:
