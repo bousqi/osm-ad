@@ -7,6 +7,7 @@
     <file>res/icons/download.png</file>
   </qresource>
   <qresource prefix="img">
+    <file>res/img/logo.png</file>
     <file>res/img/osmand_256.png</file>
     <file>res/img/osmand.png</file>
   </qresource>
