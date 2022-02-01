@@ -1,2 +1,4 @@
 PyQt5
 PyQt5-stubs
+requests
+xmltodict
