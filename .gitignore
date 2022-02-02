@@ -4,7 +4,8 @@
 /out
 /build
 /venv
-res/*
+**/vrac/*
+#res/*
 
 # local file
 /cache/watch.list
