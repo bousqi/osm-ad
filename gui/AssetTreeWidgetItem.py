@@ -3,10 +3,15 @@ from PyQt5 import QtWidgets
 
 import gui.osmm_main
 
+
 class AssetTreeWidgetItem(QtWidgets.QTreeWidgetItem):
 
-    def __init__(self, parent=None):
+    itemAsset = None
+    
+
+    def __init__(self, parent=None, asset=None):
         QtWidgets.QTreeWidgetItem.__init__(self, parent)
+        self.itemAsset = asset
 
     def __lt__(self, otherItem):
         column = self.treeWidget().sortColumn()

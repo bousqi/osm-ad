@@ -1,5 +1,6 @@
 <RCC>
   <qresource prefix="icons">
+    <file>res/icons/abort.png</file>
     <file>res/icons/about.png</file>
     <file>res/icons/app_osmand.ico</file>
     <file>res/icons/app_icon.ico</file>

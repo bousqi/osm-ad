@@ -34,9 +34,15 @@ TODO :
 class WorkerDownload(QObject):
     finished = pyqtSignal()
     progress = pyqtSignal(int, int)
+    early_exit = False
+
+    def stop(self):
+        self.early_exit = True
 
     def run(self):
         for i in range(1000):
+            if self.early_exit:
+                return
             self.progress.emit(i, 1000)
             time.sleep(0.005)
 
@@ -78,12 +84,12 @@ class gui_main(QMainWindow, Ui_MainWindow):
 
         self.refreshButton.clicked.connect(self.startThreadFeed)
         self.downloadButton.clicked.connect(self.startThreadDownload)
+        self.abortButton.clicked.connect(self.stopThreadDownload)
 
         self.leFilter.textChanged.connect(self.UI_applyFilter)
         self.UI_displayItemCount()
 
         # self.actionDownload.triggered.connect(self.startDownload) # type: ignore
-        self.progressBar_Curr.setVisible(False)
         self.abortButton.setVisible(False)
         self.progressBar_Total.setVisible(False)
 
@@ -128,6 +134,8 @@ class gui_main(QMainWindow, Ui_MainWindow):
 
         self.thread.finished.connect(lambda: self.downloadButton.setEnabled(True))
         self.thread.finished.connect(lambda: self.refreshButton.setEnabled(True))
+        self.thread.finished.connect(lambda: self.aboutButton.setVisible(True))
+        self.thread.finished.connect(lambda: self.abortButton.setVisible(False))
         self.thread.finished.connect(lambda: self.progressBar_Total.setVisible(False))
         self.thread.finished.connect(self.UI_updateIndexList)
         self.worker.progress.connect(self.reportProgress)
@@ -135,10 +143,21 @@ class gui_main(QMainWindow, Ui_MainWindow):
          # Final resets
         self.downloadButton.setEnabled(False)
         self.refreshButton.setEnabled(False)
+        self.aboutButton.setVisible(False)
+        self.abortButton.setVisible(True)
         self.progressBar_Total.setVisible(True)
         self.progressBar_Total.setValue(0)
         # Step 6: Start the thread
         self.thread.start()
+
+    def stopThreadDownload(self):
+        self.worker.stop()
+
+        self.downloadButton.setEnabled(True)
+        self.refreshButton.setEnabled(True)
+        self.aboutButton.setVisible(True)
+        self.abortButton.setVisible(False)
+        self.progressBar_Total.setVisible(False)
 
     def startThreadFeed(self):
         self.leFilter.setText("")
@@ -214,13 +233,13 @@ class gui_main(QMainWindow, Ui_MainWindow):
                 item_area.setText(COL_TYPE, area)
 
                 sub_indexes = osmm_FilterIndex(self.indexes, cat, area)
-                for ossm_item in sub_indexes:
-                    sub_item = AssetTreeWidgetItem(item_area)
-                    sub_item.setText(COL_NAME, ossm_item["@name"])
-                    sub_item.setText(COL_DATE, ossm_item["@date"])
-                    sub_item.setText(COL_COMP, ossm_item["@size"] + " MB")
+                for osmm_item in sub_indexes:
+                    sub_item = AssetTreeWidgetItem(item_area, asset=osmm_item)
+                    sub_item.setText(COL_NAME, osmm_item["@name"])
+                    sub_item.setText(COL_DATE, osmm_item["@date"])
+                    sub_item.setText(COL_COMP, osmm_item["@size"] + " MB")
                     sub_item.setTextAlignment(COL_COMP, QtCore.Qt.AlignRight)
-                    sub_item.setText(COL_SIZE, ossm_item["@targetsize"] + " MB")
+                    sub_item.setText(COL_SIZE, osmm_item["@targetsize"] + " MB")
                     sub_item.setTextAlignment(COL_SIZE, QtCore.Qt.AlignRight)
                     sub_item.setFlags(QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled)
             self.osmm_treeWidget.addTopLevelItem(item)
@@ -228,7 +247,7 @@ class gui_main(QMainWindow, Ui_MainWindow):
         pass
 
     def dispAssetsTreeLvl1(self):
-        filter = self.leFilter.text()
+        asset_filter = self.leFilter.text()
         updates_only = self.updates_cBox.isChecked()
 
         tree_root = {}
@@ -238,14 +257,14 @@ class gui_main(QMainWindow, Ui_MainWindow):
 
         # adding items
         for osmm_item in self.indexes:
-            if filter is not None and filter.lower() not in osmm_item["@name"].lower():
+            if asset_filter is not None and asset_filter.lower() not in osmm_item["@name"].lower():
                 continue
             if updates_only and ("@osmm_get" not in osmm_item or not osmm_item["@osmm_get"]):
                 continue
 
             cat = osmm_item["@type"]
             if cat not in tree_root:
-                root_item = AssetTreeWidgetItem()
+                root_item = AssetTreeWidgetItem(asset=osmm_item)
                 root_item.setText(COL_TYPE, cat)
                 tree_root[cat] = root_item
             else:
