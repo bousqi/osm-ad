@@ -54,7 +54,7 @@ def osmm_FeedIndex():
             CACHE_ONLY = True
 
     # plan b ?
-    if CACHE_ONLY and os.path.isfile(CACHE_DIR):
+    if CACHE_ONLY and os.path.isfile(CACHE_DIR + CACHE_FILENAME):
         with open(CACHE_DIR + CACHE_FILENAME, "rb") as f_index:
             dict_data = xmltodict.parse(f_index.read())
 
