@@ -1,20 +1,25 @@
+import json
 import os
 import xml
 from collections import OrderedDict
 
 import requests
 import xmltodict
+from typing import List
 
 from package.api.constants import *
 from package.api.osm_asset import OsmAsset
 
 
 class OsmAssets(dict):
-    def __init__(self, from_cache=False):
+    def __init__(self):
         super().__init__()
-        self.from_cache = from_cache
 
-    def load_index(self):
+    ''' FEEDING ASSETS '''
+    def load_index(self, from_cache=False):
+        # removing all previous entries
+        self.clear()
+
         cache_file = os.path.join(CACHE_DIR, CACHE_FILENAME)
 
         # checking cache dir exists before using it
@@ -22,14 +27,13 @@ class OsmAssets(dict):
             os.mkdir(CACHE_DIR)
 
         # feeding from internet, if requested
-        if not self.from_cache:
+        if not from_cache:
             try:
                 r = requests.get(REMOTE + INDEX_FILE)
                 with open(CACHE_DIR + CACHE_FILENAME, "wb") as f_index:
                     f_index.write(r.content)
             except:
                 print("ERROR: Failed to feed indexes. Using cache")
-                self.from_cache = True
 
         # is cache index present
         if not os.path.exists(cache_file):
@@ -61,6 +65,7 @@ class OsmAssets(dict):
                         asset = OsmAsset(item)
                         self[asset.filename] = asset
 
+    ''' DICT MANAGEMENT '''
     def categories(self):
         return sorted(set([self[key].type for key in self.keys()]))
 
@@ -92,21 +97,37 @@ class OsmAssets(dict):
         filtered_indexes = self.filter(cat=cat, country=country)
         return sorted(set([filtered_indexes[key].name for key in filtered_indexes]))
 
-    def load_watch_list(self):
-        # TODO
-        pass
-
-    def save_watch_list(self):
-        # TODO
-        pass
-
-    def updatable_list(self):
+    def updatable_list(self) -> List[OsmAsset]:
         # returns a list of OsmAsset having an update pending
         return [self[key] for key in self.keys() if self[key].updatable]
 
-'''
-    * load watch list
-    * save watch list 
-    * apply
-    including last dld update
-'''
+    ''' WATCH LIST MANAGEMENT '''
+    def load_watch_list(self):
+        wl_file = os.path.join(CACHE_DIR, WATCH_LIST)
+
+        # is the file there ?
+        if not os.path.exists(wl_file):
+            return
+
+        # file is there
+        with open(wl_file, "r") as f:
+            watches = json.load(f)
+
+        for watch in watches:
+            asset = self.get(watch[0])
+            if asset:
+                asset.watchme = True
+                asset.local_ts = int(watch[1])
+
+    def save_watch_list(self):
+        watches = []
+        for asset in self.watch_list():
+            watches.append((asset.filename, str(asset.local_ts)))
+
+        wl_file = os.path.join(CACHE_DIR, WATCH_LIST)
+        with open(wl_file, "w") as f:
+            json.dump(watches, f, indent=4)
+
+    def watch_list(self) -> List[OsmAsset]:
+        return [self[key] for key in self.keys() if self[key].watchme]
+

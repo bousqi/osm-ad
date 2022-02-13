@@ -69,3 +69,5 @@ class OsmAsset:
     def updatable(self):
         return self.watchme and self.remote_ts > self.local_ts
 
+    def downloaded(self):
+        self.local_ts = self.remote_ts
