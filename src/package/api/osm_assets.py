@@ -1,4 +1,5 @@
 import os
+import xml
 from collections import OrderedDict
 
 import requests
@@ -24,7 +25,7 @@ class OsmAssets(dict):
         if not self.from_cache:
             try:
                 r = requests.get(REMOTE + INDEX_FILE)
-                with open(CACHE_DIR + CACHE_FILENAME, "w") as f_index:
+                with open(CACHE_DIR + CACHE_FILENAME, "wb") as f_index:
                     f_index.write(r.content)
             except:
                 print("ERROR: Failed to feed indexes. Using cache")
@@ -35,11 +36,13 @@ class OsmAssets(dict):
             return
 
         # reading index file
-        with open(cache_file, "r") as f_index:
-            dict_data = xmltodict.parse(f_index.read())
+        try:
+            with open(cache_file, "r") as f_index:
+                dict_data = xmltodict.parse(f_index.read())
+        except xml.parsers.expat.ExpatError:
+            return
 
         indexes = dict_data.get(INDEX_HEAD)
-        assets = []
 
         for cat in indexes.keys():
             # processing one category & skipping fields
@@ -57,6 +60,37 @@ class OsmAssets(dict):
                         # item["@type"] = cat
                         asset = OsmAsset(item)
                         self[asset.filename] = asset
+
+    def categories(self):
+        return sorted(set([self[key].type for key in self.keys()]))
+
+    def filter(self, cat=None, country=None, updatable=None):
+        # no filters
+        if cat is None and country is None and updatable is None:
+            return self
+
+        # current dict is empty
+        if len(self) == 0:
+            return self
+
+        filtered_assets = OsmAssets()
+        for key in self.keys():
+            item = self[key]
+            to_add = True
+            if cat and item.type != cat:
+                to_add = False
+            if country and item.area != country:
+                to_add = False
+            if updatable and item.updatable != updatable:
+                to_add = False
+            if to_add:
+                filtered_assets[key] = item
+
+        return filtered_assets
+
+    def get_files(self, cat, country = None):
+        filtered_indexes = self.filter(cat=cat, country=country)
+        return sorted(set([filtered_indexes[key].name for key in filtered_indexes]))
 
     def load_watch_list(self):
         # TODO
