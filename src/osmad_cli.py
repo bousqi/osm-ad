@@ -243,7 +243,7 @@ def cli_expand(indexes):
 
 
 @click.group()
-@click.version_option(CLI_VERSION, prog_name="OpenStreetMap asset downloader")
+@click.version_option(CLI_VERSION, prog_name="OpenStreetMap - Asset Downloader")
 @click.option('--cache-dir',  '-cd', "cache_dir", type=click.Path(dir_okay=True, file_okay=False, readable=True, writable=True, exists=False), default=None, help="Path where to find cache files")
 @click.option('--download-dir', '-dd', "ddl_dir", type=click.Path(dir_okay=True, file_okay=False, readable=True, writable=True, exists=False), default=None, help="Path where to download and extract assets")
 def cli(cache_dir, ddl_dir,):
@@ -261,7 +261,7 @@ def cli(cache_dir, ddl_dir,):
 
 
 @cli.command()  # @cli, not @click!
-@click.option('--list',  '-l', "list", is_flag=True, type=bool, help="List all assets to watch")
+@click.option('--list',  '-l', "wlist", is_flag=True, type=bool, help="List all assets to watch")
 @click.option('--clear', '-c', "clear", is_flag=True, type=bool, help="Remove all assets from watch list")
 @click.option('--add',   '-a', "wadd", type=str, default=None, help="Add specified asset to watch list")
 @click.option('--del',   '-d', "wdel", type=str, default=None, help="Remove specified asset from watch list")
@@ -301,15 +301,14 @@ def watch(wlist, clear, wadd, wdel):
                 return 1
             osm_assets[wadd].watchme = True
             osm_assets.save_watch_list()
-            click.echo("DONE : 1 item added to watch list, {} total".format(len(watchlist)))
+            click.echo("DONE : 1 item added to watch list, {} total".format(len(osm_assets.watch_list())))
         elif wdel is not None:
-            print(watchlist)
             if not [item for item in watchlist if item.name == wdel]:
                 click.echo("ERROR: {} not in watchlist. Use watch -l command to check".format(wadd))
                 return 1
             osm_assets[wdel].watchme = False
             osm_assets.save_watch_list()
-            click.echo("DONE : 1 item removed from watch list, {} left".format(len(watchlist)))
+            click.echo("DONE : 1 item removed from watch list, {} left".format(len(osm_assets.watch_list())))
 
 
 @cli.command()  # @cli, not @click!
@@ -369,8 +368,8 @@ def list(from_cache, lists, item_type, item_area, item_name, sort_order):
         return cli_dump_date(osm_assets[item_name])
 
     # sharing display order
-#    if item_type is None and item_area is None:
-#        sort_order = None
+    if item_type is None and item_area is None:
+        sort_order = None
     g_order = sort_order
 
     # applying filters
