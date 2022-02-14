@@ -4,7 +4,7 @@
 block_cipher = None
 
 
-a = Analysis(['osmm_gui.py'],
+a = Analysis(['src/osmad_gui.py'],
              pathex=[],
              binaries=[],
              datas=[],
@@ -26,7 +26,7 @@ exe = EXE(pyz,
           a.zipfiles,
           a.datas,  
           [],
-          name='osmm_gui',
+          name='osmad_gui',
           debug=False,
           bootloader_ignore_signals=False,
           strip=False,
@@ -37,4 +37,4 @@ exe = EXE(pyz,
           disable_windowed_traceback=False,
           target_arch=None,
           codesign_identity=None,
-          entitlements_file=None , icon='res\\icons\\app_icon.ico')
+          entitlements_file=None , icon='src\\icons\\base\\app_icon.ico')

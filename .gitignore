@@ -13,3 +13,6 @@
 # gui converted to pytonh
 gui/*.py
 osmm_res_rc.py
+
+src/package/ui/ui_*.py
+src/res*.py
