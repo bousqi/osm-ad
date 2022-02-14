@@ -4,7 +4,7 @@
 block_cipher = None
 
 
-a = Analysis(['osmm_cli.py'],
+a = Analysis(['src/osmad_cli.py'],
              pathex=[],
              binaries=[],
              datas=[],
@@ -26,7 +26,7 @@ exe = EXE(pyz,
           a.zipfiles,
           a.datas,  
           [],
-          name='osmm_cli',
+          name='osmad_cli',
           debug=False,
           bootloader_ignore_signals=False,
           strip=False,

@@ -1,6 +1,7 @@
 import os
 import shutil
 import unittest
+import urllib
 
 import requests
 
@@ -108,7 +109,7 @@ class testOsmAsset_API(unittest.TestCase):
             first_key = next(iter(sub_list))
             asset = sub_list[first_key]
             # print(asset.url)
-            r = requests.head(asset.url)
+            r = requests.head(asset.url, proxies=urllib.request.getproxies(), verify=CFG_SSL_VERIFY)
             assert r.status_code == 200
 
     def test_6_watch_list(self):

@@ -1,5 +1,6 @@
 import json
 import os
+import urllib
 import xml
 from collections import OrderedDict
 
@@ -29,7 +30,7 @@ class OsmAssets(dict):
         # feeding from internet, if requested
         if not from_cache:
             try:
-                r = requests.get(REMOTE + INDEX_FILE)
+                r = requests.get(REMOTE + INDEX_FILE, proxies=urllib.request.getproxies(), verify=CFG_SSL_VERIFY)
                 with open(CACHE_DIR + CACHE_FILENAME, "wb") as f_index:
                     f_index.write(r.content)
             except:
@@ -68,6 +69,10 @@ class OsmAssets(dict):
     ''' DICT MANAGEMENT '''
     def categories(self):
         return sorted(set([self[key].type for key in self.keys()]))
+
+    def countries(self, cat=None):
+        filtered_indexes = self.filter(cat=cat)
+        return sorted(set([filtered_indexes[key].area for key in filtered_indexes.keys()]))
 
     def filter(self, cat=None, country=None, updatable=None):
         # no filters

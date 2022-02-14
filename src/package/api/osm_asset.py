@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from package.api.constants import *
 
 
@@ -41,11 +43,10 @@ class OsmAsset:
         self.type = item.get("@type")                       # type / category
         self.name = item.get("@name")                       # filename
         self.desc = item.get("@description")                # description
-        # TODO : convert to a real date
         self.remote_ts = int(item.get("@timestamp"))        # last remote update
         self.local_ts = int(0)                              # last local update
-        self.c_size = item.get("@c_size")                   # compressed size
-        self.e_size = item.get("@e_size")                   # expanded size
+        self.c_size = int(item.get("@containerSize"))       # compressed size
+        self.e_size = int(item.get("@contentSize"))         # expanded size
 
         # get local file date
         self.local_ts = 0
@@ -56,14 +57,38 @@ class OsmAsset:
         self.url = REMOTE + DOWNLOAD_FILE + self.name + TYPE_ATTRIB[self.type]["suffix"]
 
     def __repr__(self):
-        print("{:>10} | {:>6} MB | {} | {}".format(self.type, self.size, self.date, self.name))
+        return "{:>10} | {:>6} MB | {} | {}".format(self.type, self.e_size//1024//1024, self.remote_date, self.name)
 
     def __str__(self):
-        print(f"{self.name}")
+        return self.name
+
+    @property
+    def remote_date(self):
+        date = datetime.fromtimestamp(self.remote_ts//1000)
+        return "{:>02}.{:>02}.{:>04}".format(date.day, date.month,date.year)
+
+    @property
+    def local_date(self):
+        date = datetime.fromtimestamp(self.local_ts//1000)
+        return "{:>02}.{:>02}.{:>04}".format(date.day, date.month,date.year)
 
     @property
     def filename(self):
         return self.name
+
+    @property
+    def output_dir(self):
+        if self.type not in TYPE_ATTRIB:
+            return ""
+
+        # path depends on type
+        path = TYPE_ATTRIB[self.type]["out"]
+
+        # for voice type, subfolder required
+        if self.type == "voice":
+            path = path + self.name.replace("_0.voice.zip", "/")
+
+        return path
 
     @property
     def updatable(self):

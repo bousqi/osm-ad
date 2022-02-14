@@ -1,11 +1,17 @@
+import os.path
+import datetime
 import glob, shutil, zipfile
+import urllib.request
 from pathlib import Path
 
 from tqdm import *
-import click, requests, datetime, os.path
-import osmm_data
+import click, requests
 
-g_indexes = None
+from package.api.constants import *
+from package.api.osm_assets import OsmAssets
+
+
+osm_assets = OsmAssets()
 g_order = None
 g_watchlist = []
 
@@ -22,55 +28,49 @@ TODO list :
 # --------------------------------------------------------------------------
 
 
-def _assets_feed(from_cache = False):
-    global g_indexes
-
-    osmm_data.CACHE_ONLY = from_cache
-    g_indexes = osmm_data.osmm_ProcessIndexes(osmm_data.osmm_FeedIndex())
-    return g_indexes
-
-
 def cli_print_header():
     print("{:^10} | {:^9} | {:^10} | {}".format("Type", "Size", "Date", "Name"))
     print("{:>10} | {:>9} | {} | {}".format("-"*10, "-"*9, "-"*10, "-"*100, ))
 
 
 def cli_print_item(item):
-    print("{:>10} | {:>6} MB | {} | {}".format(item["@type"], item["@size"], item["@date"], item["@name"]))
+    print("{:>10} | {:>6} MB | {} | {}".format(item.type, item.e_size//1024//1024, item.remote_date, item.name))
 
 
-def cli_dump(indexes):
+def cli_dump(assets):
     cli_print_header()
 
-    sorted_indexes = indexes
     if g_order is not None:
+        sorted_assets = [assets[key] for key in assets.keys()]
         if g_order == 'name':
-            sorted_indexes = sorted(indexes, key=lambda d: d["@"+g_order])
+            sorted_assets = sorted(sorted_assets, key=lambda k: k.name)
         elif g_order == 'size':
-            sorted_indexes = sorted(indexes, key=lambda d: float(d["@"+g_order]))
+            sorted_assets = sorted(sorted_assets, key=lambda k: float(k.e_size))
         elif g_order == 'date':
-            sorted_indexes = sorted(indexes, key=lambda d: d["@"+g_order])
+            sorted_assets = sorted(sorted_assets, key=lambda k: k.remote_ts)
+    else:
+        sorted_assets = [assets[key] for key in assets.keys()]
 
     # going through items
-    for item in sorted_indexes:
+    for item in sorted_assets:
         cli_print_item(item)
 
-    print("\nDisplayed {} items among {}".format(len(indexes), len(g_indexes)))
+    print("\nDisplayed {} items among {}".format(len(sorted_assets), len(assets)))
 
 
 def cli_dump_areas(indexes):
-    countries = osmm_data.osmm_GetCountries(indexes)
+    countries = osm_assets.countries()
     print("{:>4} items : {}".format(len(countries), countries))
 
 
 def cli_dump_types(indexes):
-    categories = osmm_data.osmm_GetCategories(indexes)
+    categories = osm_assets.categories()
     print("{:>4} items : {}".format(len(categories), categories))
 
 
 def cli_dump_date(item):
     if item is not None:
-        print("{}".format(item["@date"]))
+        print("{}".format(item.remote_date))
         return 0
     else:
         return 1
@@ -80,48 +80,29 @@ def _already_downloaded(item):
     if item is None:
         return True
 
-    filename = ASSETS_DIR + item["@name"]
-
-    # is file already there ?
-    if not os.path.isfile(filename):
+    # comparing watchlist and remote timestamps
+    if item.remote_ts > item.local_ts:
         return False
 
-    # is there an update for this file
-    item_date = item["@date"].split('.')
-    ts = datetime.datetime(int(item_date[2]), int(item_date[1]), int(item_date[0]), 0, 0).timestamp()
-    if os.path.getctime(filename) < ts:
+    path = ASSETS_DIR + item.name
+    # is file already there ?
+    if not os.path.isfile(path):
         return False
 
     # is existing file incomplete ?
-    if int(os.path.getsize(filename)) != int(item["@containerSize"]):
+    if int(os.path.getsize(path)) != int(item.c_size):
         return False
 
     # no need to download
     return True
 
 
-def _watch_read():
-    global g_watchlist
-    g_watchlist = osmm_data.osmm_WatchRead()
-
-
-def _watch_write():
-    global g_watchlist
-    osmm_data.osmm_WatchWrite(g_watchlist)
-
-
-def _watch_apply(indexes):
-    global g_watchlist
-    for name in g_watchlist:
-        osmm_data.osmm_SetDownload(indexes, name)
-
-
-def cli_download(indexes, no_prog):
-    if indexes is None:
+def cli_download(assets_list, no_prog):
+    if not assets_list:
         print("Nothing to download.")
         return
 
-    print("Processing download queue : {} item(s)".format(len(indexes)))
+    print("Processing download queue : {} item(s)".format(len(assets_list)))
 
     # checking assets dir exists before using it
     if not os.path.isdir(ASSETS_DIR):
@@ -129,59 +110,56 @@ def cli_download(indexes, no_prog):
 
     # tracking new items
     new_indexes = []
-    for index, item in enumerate(indexes):
-        filename = item["@name"]
-
+    for index, item in enumerate(assets_list):
         # item to download ?
         if _already_downloaded(item):
-            print("{:>2}/{:>2} - {:<50} - NO_UPDATE".format(index+1, len(indexes), filename))
+            print("{:>2}/{:>2} - {:<50} - NO_UPDATE".format(index+1, len(assets_list), item.filename))
             continue
 
         # to download !
-        url = osmm_data.REMOTE + osmm_data.DOWNLOAD_FILE + filename
+        #url = REMOTE + DOWNLOAD_FILE + item.filename
 
         # Getting file size
         # r = requests.head(url)
         # file_size = int(r.headers.get('content-length', 0))
-        file_size = int(item["@containerSize"])
+        file_size = int(item.c_size)
 
         # requesting file
-        url = osmm_data.osmm_GetDownloadURL(item)
-
         # giving 3 tries to get the file
         for retry in range(3):
             try:
-                r = requests.get(url, headers=USER_AGENT, stream=True)
-                # click.echo(url)
+                r = requests.get(item.url, headers=USER_AGENT, proxies=urllib.request.getproxies(), verify=CFG_SSL_VERIFY, stream=True)
+                # click.echo(item.url)
             except requests.exceptions.ConnectionError:
                 r = None
 
             if r and r.status_code == requests.codes.ok:
                 break;
 
-            click.echo("{:>2}/{:>2} - {:<50} - Retry {}".format(index+1, len(indexes), filename, retry+1))
+            click.echo("{:>2}/{:>2} - {:<50} - Retry {}".format(index+1, len(assets_list), item.filename, retry+1))
 
         # has one try succeeded ?
         if r is None or r.status_code != requests.codes.ok:
-            click.echo("{:>2}/{:>2} - {:<50} - ERROR 404, not found".format(index+1, len(indexes), filename))
-            click.echo("{} > {}".format(" "*46, url))
+            click.echo("{:>2}/{:>2} - {:<50} - ERROR 404, not found".format(index+1, len(assets_list), item.filename))
+            click.echo("{} > {}".format(" "*58, item.url))
             continue
 
         # added to list of downloaded
+        item.downloaded()
         new_indexes.append(item)
 
         # Set configuration
         block_size = 1024
         initial_pos = 0
         mode = 'wb'
-        file = ASSETS_DIR + filename
+        file = ASSETS_DIR + item.filename
 
         try:
             # creating output file
             with open(file, mode) as f:
                 # creating progress bar
                 with tqdm(total=file_size, unit='B', unit_scale=True, unit_divisor=1024,
-                          desc="{:>2}/{:>2} - {:<50}".format(index+1, len(indexes), filename),
+                          desc="{:>2}/{:>2} - {:<50}".format(index+1, len(assets_list), item.filename),
                           initial=initial_pos, miniters=1, dynamic_ncols=True) as pbar:
                     # getting stream chunks to write
                     for chunk in r.iter_content(32 * block_size):
@@ -218,13 +196,13 @@ def cli_expand(indexes):
     # expanding
     print("\nExpanding/Copying : {} item(s)".format(len(indexes)))
     for index, item in enumerate(indexes):
-        asset_dir = OUTPUT_DIR + osmm_data.osmm_OutputDir(item)
+        asset_dir = OUTPUT_DIR + item.output_dir
 
         # creating asset output dir
         if not os.path.isdir(asset_dir):
             Path(asset_dir).mkdir(parents=True, exist_ok=True)
 
-        asset_filename = item["@name"]
+        asset_filename = item.name
         print("{:>2}/{:>2} : {} in {}".format(index+1, len(indexes), asset_filename, asset_dir))
 
         if asset_filename.endswith(".zip"):
@@ -267,14 +245,16 @@ def cli_expand(indexes):
 @click.option('--download-dir', '-dd', "ddl_dir", type=click.Path(dir_okay=True, file_okay=False, readable=True, writable=True, exists=False), default=None, help="Path where to download and extract assets")
 def cli(cache_dir, ddl_dir,):
     global ASSETS_DIR, OUTPUT_DIR
+    global osm_assets
 
     if cache_dir:
-        osmm_data.CACHE_DIR = os.path.join(cache_dir, '')
+        CACHE_DIR = os.path.join(cache_dir, '')
 
     if ddl_dir:
         OUTPUT_DIR = os.path.join(ddl_dir, OUTPUT_DIR)
         ASSETS_DIR = os.path.join(ddl_dir, ASSETS_DIR)
-    pass
+
+    osm_assets.load_index(from_cache=True)
 
 
 @cli.command()  # @cli, not @click!
@@ -284,43 +264,48 @@ def cli(cache_dir, ddl_dir,):
 @click.option('--del',   '-d', "wdel", type=str, default=None, help="Remove specified asset from watch list")
 def watch(list, clear, wadd, wdel):
     """Watch list management"""
-    global g_watchlist
-    global g_indexes
+    global osm_assets
 
     # reading list
-    _watch_read()
+    osm_assets.load_watch_list()
+    watchlist = osm_assets.watch_list()
 
     if list or (not list and not clear and not wadd and not wdel):
-        if g_watchlist is None or len(g_watchlist) == 0:
+        if len(watchlist) == 0:
             print("List is empty. Use --add")
             return
 
         # dumping list
-        for index, item in enumerate(g_watchlist):
-            print("{:>2}/{} - {}".format(index+1, len(g_watchlist), item))
+
+        for index, item in enumerate(watchlist):
+            print("{:>2}/{} - {}".format(index+1, len(watchlist), item.name))
     elif clear:
         # clearing list
-        g_watchlist = []
-        _watch_write()
+        for item in watchlist:
+            osm_assets[item].watchme = False
+        osm_assets.save_watch_list()
         print("List cleared !")
     else:
         if wadd is not None:
-            if wadd in g_watchlist:
+            if [item for item in watchlist if item.name == wadd]:
                 click.echo("ERROR: {} already in watchlist. Use watch -l command to check".format(wadd))
                 return 1
-            _assets_feed(True)
-            if osmm_data.osmm_GetItem(g_indexes, wadd) is None:
+            # refresh index from server
+            osm_assets.load_index(from_cache=False)
+            osm_assets.load_watch_list()
+            if wadd not in osm_assets:
                 click.echo("ERROR: {} is not a valid asset. Use list command to check".format(wadd))
                 return 1
-            g_watchlist.append(wadd)
-            _watch_write()
+            osm_assets[wadd].watchme = True
+            osm_assets.save_watch_list()
             click.echo("DONE : 1 item added to watch list, {} total".format(len(g_watchlist)))
         elif wdel is not None:
-            if wdel not in g_watchlist:
+            print(watchlist)
+            if not [item for item in watchlist if item.name == wdel]:
                 click.echo("ERROR: {} not in watchlist. Use watch -l command to check".format(wadd))
                 return 1
-            g_watchlist.remove(wdel)
-            _watch_write()
+            osm_assets[wdel].watchme = False
+            osm_assets.save_watch_list()
             click.echo("DONE : 1 item removed from watch list, {} left".format(len(g_watchlist)))
 
 
@@ -328,17 +313,20 @@ def watch(list, clear, wadd, wdel):
 @click.option('--no-progress', '-n', "no_prog", is_flag=True, type=bool, help="Disable progress bar during download")
 def update(no_prog):
     """Download/Update assets based on watch list"""
+    global osm_assets
 
     # feeding assets
-    indexes = _assets_feed()
+    osm_assets.load_index(False)
 
     # reads watch list from file & apply
-    _watch_read()
-    _watch_apply(indexes)
+    osm_assets.load_watch_list()
 
     # download items
-    dl_list = osmm_data.osmm_GetDownloads(indexes)
+    dl_list = osm_assets.watch_list()
     dl_list = cli_download(dl_list, no_prog)
+
+    # saving all downloaded files in watch list
+    osm_assets.save_watch_list()
 
     # decompress assets
     cli_expand(dl_list)
@@ -350,9 +338,10 @@ def update(no_prog):
 @cli.command()  # @cli, not @click!
 def refresh():
     """Refresh cache from OpenStreet Map server"""
-    osmm_data.CACHE_ONLY = False
+    global osm_assets
+
     click.echo("< Feeding from server >")
-    osmm_data.osmm_FeedIndex()
+    osm_assets.load_index(from_cache=False)
 
 
 @cli.command()  # @cli, not @click!
@@ -364,37 +353,37 @@ def refresh():
 @click.option('--sort', '-s', "sort_order", type=click.Choice(['name', 'size', 'date'], case_sensitive=False), default='name', help="Order to use for list display")
 def list(from_cache, lists, item_type, item_area, item_name, sort_order):
     """List assets available in cache"""
-    global g_indexes
+    global osm_assets
     global g_order
 
     if from_cache:
         print("< Feeding from cache >")
     else:
         print("< Feeding from server >")
-    _assets_feed(from_cache)
+    osm_assets.load_index(from_cache=from_cache)
 
     if item_name is not None:
-        return cli_dump_date(osmm_data.osmm_GetItem(g_indexes, item_name))
+        return cli_dump_date(osm_assets[item_name])
 
     # sharing display order
-    if item_type is None and item_area is None:
-        sort_order = None
+#    if item_type is None and item_area is None:
+#        sort_order = None
     g_order = sort_order
 
     # applying filters
-    sub_indexes = g_indexes
+    filtered_assets = osm_assets
     if item_type is not None:
-        sub_indexes = osmm_data.osmm_FilterIndex(sub_indexes, cat=item_type)
+        filtered_assets = filtered_assets.filter(cat=item_type)
     if item_area is not None:
-        sub_indexes = osmm_data.osmm_FilterIndex(sub_indexes, country=item_area)
+        filtered_assets = filtered_assets.filter(area=item_area)
 
     # display results
     if lists == 'ALL':
-        cli_dump(sub_indexes)
+        cli_dump(filtered_assets)
     elif lists == 'AREAS':
-        cli_dump_areas(sub_indexes)
+        cli_dump_areas(filtered_assets)
     elif lists == 'TYPES':
-        cli_dump_types(sub_indexes)
+        cli_dump_types(filtered_assets)
 
     return 0
 

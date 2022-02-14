@@ -1,4 +1,4 @@
-# OsmAnd Maps downloader (CLI &amp; GUI)
+# Open Street Map - Assets Downloader (CLI &amp; GUI)
 
 OsmAnd Android application has a free version with a limitation on maps updates.
 This tool was created to run a CRON job on a specific set of map and feed the latest 
@@ -8,7 +8,7 @@ maps when available.
 
 ### Command Line Interface
 ````
-Usage: osmm_cli.py [OPTIONS] COMMAND [ARGS]...
+Usage: osmad_cli.py [OPTIONS] COMMAND [ARGS]...
 
 Options:
   --version                      Show the version and exit.
@@ -53,7 +53,7 @@ Before launching the application, you must build UIs and Resource file with the 
 	$ pyuic5 gui/about.ui -o gui/about.py
 
 ##### Generate Res file
-	$ pyrcc5 osmm_res.qrc -o osmm_res_rc.py
+	$ pyrcc5 osmad_res.qrc -o osmad_res_rc.py
 
 
 ### Create native executable
@@ -66,14 +66,14 @@ In order to create a native executable (easier to deploy), you should proceed as
 
 #### CLI
 ```
-$ pyinstaller osmm_cli.spec
+$ pyinstaller osmad_cli.spec
 ...
-$ dist\osmm_cli.exe
+$ dist\osmad_cli.exe
 ```
 
 #### GUI
 ```
-$ pyinstaller osmm_gui.spec
+$ pyinstaller osmad_gui.spec
 ...
-$ dist\osmm_gui.exe
+$ dist\osmad_gui.exe
 ```

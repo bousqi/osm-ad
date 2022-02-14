@@ -5,9 +5,10 @@ DOWNLOAD_FILE = "/download?file="
 
 INDEX_HEAD = "osmand_regions"
 
+CFG_SSL_VERIFY = True
+
 CACHE_DIR = "cache/"
 CACHE_FILENAME = "indexes.xml"
-CACHE_ONLY = False
 WATCH_LIST = "watch.list"
 
 NOAREA_CATS = ["fonts", "depth", "voice"]
