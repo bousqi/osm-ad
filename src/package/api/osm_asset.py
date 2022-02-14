@@ -16,7 +16,7 @@ def extract_area(name, cat):
 
 
 class OsmAsset:
-    '''
+    """
         type
         filename
         date
@@ -36,8 +36,7 @@ class OsmAsset:
         description="Map, Roads, POI, Transport, Address data for Saint-pierre-and-miquelon northamerica"
         name="Saint-pierre-and-miquelon_northamerica_2.obf.zip"
         timestamp="1640995200000"/>
-
-    '''
+    """
 
     def __init__(self, item):
         self.type = item.get("@type")                       # type / category
@@ -65,12 +64,12 @@ class OsmAsset:
     @property
     def remote_date(self):
         date = datetime.fromtimestamp(self.remote_ts//1000)
-        return "{:>02}.{:>02}.{:>04}".format(date.day, date.month,date.year)
+        return "{:>02}.{:>02}.{:>04}".format(date.day, date.month, date.year)
 
     @property
     def local_date(self):
         date = datetime.fromtimestamp(self.local_ts//1000)
-        return "{:>02}.{:>02}.{:>04}".format(date.day, date.month,date.year)
+        return "{:>02}.{:>02}.{:>04}".format(date.day, date.month, date.year)
 
     @property
     def filename(self):

@@ -1,6 +1,6 @@
 import json
 import os
-import urllib
+import urllib.request
 import xml
 from collections import OrderedDict
 
@@ -60,7 +60,7 @@ class OsmAssets(dict):
                     asset = OsmAsset(item)
                     self[asset.filename] = asset
                 if type(sub_indexes) is list:
-                    # list of OrderedDict to be parse
+                    # list of OrderedDict to be parsed
                     for item in sub_indexes:
                         # item["@type"] = cat
                         asset = OsmAsset(item)
@@ -98,7 +98,7 @@ class OsmAssets(dict):
 
         return filtered_assets
 
-    def get_files(self, cat, country = None):
+    def get_files(self, cat, country=None):
         filtered_indexes = self.filter(cat=cat, country=country)
         return sorted(set([filtered_indexes[key].name for key in filtered_indexes]))
 

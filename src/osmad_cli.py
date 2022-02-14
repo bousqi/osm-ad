@@ -1,25 +1,26 @@
+import glob
 import os.path
-import datetime
-import glob, shutil, zipfile
+import shutil
 import urllib.request
+import zipfile
 from pathlib import Path
 
+import click
+import requests
 from tqdm import *
-import click, requests
 
+from package.api import constants
 from package.api.constants import *
 from package.api.osm_assets import OsmAssets
 
-
 osm_assets = OsmAssets()
 g_order = None
-g_watchlist = []
 
 ASSETS_DIR = "assets/"
 OUTPUT_DIR = "out/"
 USER_AGENT = {'User-agent': 'OsmAnd'}
 
-CLI_VERSION = "0.9.1"
+CLI_VERSION = "0.9.5"
 
 '''
 TODO list :
@@ -58,13 +59,13 @@ def cli_dump(assets):
     print("\nDisplayed {} items among {}".format(len(sorted_assets), len(assets)))
 
 
-def cli_dump_areas(indexes):
-    countries = osm_assets.countries()
+def cli_dump_areas(assets):
+    countries = assets.countries()
     print("{:>4} items : {}".format(len(countries), countries))
 
 
-def cli_dump_types(indexes):
-    categories = osm_assets.categories()
+def cli_dump_types(assets):
+    categories = assets.categories()
     print("{:>4} items : {}".format(len(categories), categories))
 
 
@@ -117,7 +118,6 @@ def cli_download(assets_list, no_prog):
             continue
 
         # to download !
-        #url = REMOTE + DOWNLOAD_FILE + item.filename
 
         # Getting file size
         # r = requests.head(url)
@@ -126,15 +126,18 @@ def cli_download(assets_list, no_prog):
 
         # requesting file
         # giving 3 tries to get the file
+        r = None
         for retry in range(3):
             try:
-                r = requests.get(item.url, headers=USER_AGENT, proxies=urllib.request.getproxies(), verify=CFG_SSL_VERIFY, stream=True)
+                r = requests.get(item.url, headers=USER_AGENT,
+                                 proxies=urllib.request.getproxies(), verify=CFG_SSL_VERIFY,
+                                 stream=True)
                 # click.echo(item.url)
             except requests.exceptions.ConnectionError:
                 r = None
 
             if r and r.status_code == requests.codes.ok:
-                break;
+                break
 
             click.echo("{:>2}/{:>2} - {:<50} - Retry {}".format(index+1, len(assets_list), item.filename, retry+1))
 
@@ -173,11 +176,11 @@ def cli_download(assets_list, no_prog):
 
         except requests.exceptions.Timeout as e:
             # Maybe set up for a retry, or continue in a retry loop
-            click.echo("ERROR: " + e)
+            click.echo("ERROR: " + str(e))
         except requests.exceptions.TooManyRedirects as e:
             # Tell the user their URL was bad and try a different one
-            click.echo("ERROR: " + e)
-        except requests.exceptions.RequestException as e:
+            click.echo("ERROR: " + str(e))
+        except requests.exceptions.RequestException:
             # catastrophic error, try next
             pass
 
@@ -248,7 +251,7 @@ def cli(cache_dir, ddl_dir,):
     global osm_assets
 
     if cache_dir:
-        CACHE_DIR = os.path.join(cache_dir, '')
+        constants.CACHE_DIR = os.path.join(cache_dir, '')
 
     if ddl_dir:
         OUTPUT_DIR = os.path.join(ddl_dir, OUTPUT_DIR)
@@ -262,7 +265,7 @@ def cli(cache_dir, ddl_dir,):
 @click.option('--clear', '-c', "clear", is_flag=True, type=bool, help="Remove all assets from watch list")
 @click.option('--add',   '-a', "wadd", type=str, default=None, help="Add specified asset to watch list")
 @click.option('--del',   '-d', "wdel", type=str, default=None, help="Remove specified asset from watch list")
-def watch(list, clear, wadd, wdel):
+def watch(wlist, clear, wadd, wdel):
     """Watch list management"""
     global osm_assets
 
@@ -270,7 +273,7 @@ def watch(list, clear, wadd, wdel):
     osm_assets.load_watch_list()
     watchlist = osm_assets.watch_list()
 
-    if list or (not list and not clear and not wadd and not wdel):
+    if wlist or (not wlist and not clear and not wadd and not wdel):
         if len(watchlist) == 0:
             print("List is empty. Use --add")
             return
@@ -298,7 +301,7 @@ def watch(list, clear, wadd, wdel):
                 return 1
             osm_assets[wadd].watchme = True
             osm_assets.save_watch_list()
-            click.echo("DONE : 1 item added to watch list, {} total".format(len(g_watchlist)))
+            click.echo("DONE : 1 item added to watch list, {} total".format(len(watchlist)))
         elif wdel is not None:
             print(watchlist)
             if not [item for item in watchlist if item.name == wdel]:
@@ -306,7 +309,7 @@ def watch(list, clear, wadd, wdel):
                 return 1
             osm_assets[wdel].watchme = False
             osm_assets.save_watch_list()
-            click.echo("DONE : 1 item removed from watch list, {} left".format(len(g_watchlist)))
+            click.echo("DONE : 1 item removed from watch list, {} left".format(len(watchlist)))
 
 
 @cli.command()  # @cli, not @click!
@@ -375,7 +378,7 @@ def list(from_cache, lists, item_type, item_area, item_name, sort_order):
     if item_type is not None:
         filtered_assets = filtered_assets.filter(cat=item_type)
     if item_area is not None:
-        filtered_assets = filtered_assets.filter(area=item_area)
+        filtered_assets = filtered_assets.filter(country=item_area)
 
     # display results
     if lists == 'ALL':
