@@ -1,7 +1,7 @@
 <RCC>
   <qresource prefix="icons">
     <file>icons/base/folders-32.png</file>
-    <file>icons/base/upgrade-32.png</file>
+    <file>icons/base/up-arrow-32.png</file>
     <file>icons/base/visibility-32.png</file>
     <file>icons/base/abort.png</file>
     <file>icons/base/about.png</file>

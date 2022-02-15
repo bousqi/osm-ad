@@ -14,11 +14,11 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>OsmAnd - Map Download</string>
+   <string>OpenStreeMap - Asset Downloader</string>
   </property>
   <property name="windowIcon">
    <iconset resource="../../resources.qrc">
-    <normaloff>:/icons/icons/base/app_osmand.ico</normaloff>:/icons/icons/base/app_osmand.ico</iconset>
+    <normaloff>:/icons/icons/base/app_icon.ico</normaloff>:/icons/icons/base/app_icon.ico</iconset>
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QVBoxLayout" name="verticalLayout">
@@ -84,6 +84,9 @@
       </item>
       <item>
        <widget class="QPushButton" name="btn_grouped">
+        <property name="toolTip">
+         <string>Group items</string>
+        </property>
         <property name="text">
          <string/>
         </property>
@@ -104,6 +107,9 @@
       </item>
       <item>
        <widget class="QPushButton" name="btn_watched">
+        <property name="toolTip">
+         <string>Only tracked item</string>
+        </property>
         <property name="text">
          <string/>
         </property>
@@ -121,12 +127,15 @@
       </item>
       <item>
        <widget class="QPushButton" name="btn_updates">
+        <property name="toolTip">
+         <string>Only updates</string>
+        </property>
         <property name="text">
          <string/>
         </property>
         <property name="icon">
          <iconset resource="../../resources.qrc">
-          <normaloff>:/icons/icons/base/upgrade-32.png</normaloff>:/icons/icons/base/upgrade-32.png</iconset>
+          <normaloff>:/icons/icons/base/up-arrow-32.png</normaloff>:/icons/icons/base/up-arrow-32.png</iconset>
         </property>
         <property name="checkable">
          <bool>true</bool>
@@ -218,6 +227,9 @@
           <height>26</height>
          </size>
         </property>
+        <property name="toolTip">
+         <string>Cancel</string>
+        </property>
         <property name="text">
          <string/>
         </property>
@@ -246,6 +258,9 @@
           <width>28</width>
           <height>26</height>
          </size>
+        </property>
+        <property name="toolTip">
+         <string>About...</string>
         </property>
         <property name="text">
          <string/>
