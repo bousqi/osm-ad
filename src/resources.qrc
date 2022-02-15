@@ -12,6 +12,7 @@
   </qresource>
   <qresource prefix="img">
     <file>resources/base/logo.png</file>
+    <file>resources/base/maps.png</file>
     <file>resources/base/osmand.png</file>
     <file>resources/base/osmand_256.png</file>
   </qresource>

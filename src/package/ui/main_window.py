@@ -4,6 +4,7 @@ from PyQt5.QtWidgets import QMainWindow, QMessageBox, QShortcut
 
 from package.ui.ui_main import Ui_MainWindow
 from package.api.osm_assets import OsmAssets
+from package.gui_constants import *
 
 """ CONSTANTS """
 
@@ -282,6 +283,15 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     # ABOUT ACTION
     def about_dlg(self):
-        msg_box = QMessageBox(QMessageBox.Information, "About", "OpenStreetMap - Asset Downloader", QMessageBox.Ok)
-        msg_box.setIconPixmap(QtGui.QPixmap(":/icons/icons/base/app_icon.ico"))
+        msg_box = QMessageBox(QMessageBox.Information, "About", OSMAD_ABOUT_INFO, QMessageBox.Ok)
+        icon = QtGui.QIcon()
+        icon.addPixmap(QtGui.QPixmap(":/img/resources/base/maps.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        msg_box.setWindowIcon(icon)
+        msg_box.setIconPixmap(QtGui.QPixmap(":/img/resources/base/maps.png").scaledToWidth(128, QtCore.Qt.SmoothTransformation))
+        msg_box.setTextFormat(QtCore.Qt.MarkdownText)
+        layout = msg_box.layout()
+        widget = PyQt5.QtWidgets.QWidget()
+        widget.setFixedSize(550, 1)
+        layout.addWidget(widget, 3, 0, 1, 3)
+
         msg_box.exec()
