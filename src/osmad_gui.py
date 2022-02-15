@@ -14,6 +14,6 @@ sys.excepthook = exception_hook
 if __name__ == "__main__":
     app = QApplication(sys.argv)
 
-    ex = MainWindow()
+    ex = MainWindow(app)
     ex.show()
     sys.exit(app.exec_())

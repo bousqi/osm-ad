@@ -21,10 +21,12 @@ COL_PROG = 7
 
 
 class MainWindow(QMainWindow, Ui_MainWindow):
-    def __init__(self):
+    def __init__(self, app):
         QMainWindow.__init__(self)
         Ui_MainWindow.__init__(self)
+
         self.assets = OsmAssets()
+        self.app = app
 
         # class instance vars init
         # UI init
@@ -88,9 +90,14 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     # TREEWIDGET MANAGEMENT
     def tw_refresh_assets(self):
+        self.btn_refresh.setEnabled(False)
+        self.app.processEvents()                    # Trick to update UI
+
         self.assets.load_index()
         self.assets.load_watch_list()
         self.tw_update_list()
+
+        self.btn_refresh.setEnabled(True)
 
     def tw_update_list(self):
         # empty the list
@@ -121,7 +128,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.tw_assets.setColumnWidth(COL_SIZE, 100)
         self.tw_assets.setColumnWidth(COL_WTCH, 20)
         self.tw_assets.setColumnWidth(COL_UPDT, 20)
-        # self.UI_displayItemCount()
+
+        self.sb_update_summary()
 
     def tw_populate_as_tree(self):
         asset_filter = self.le_filter.text()
@@ -213,10 +221,13 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.tw_assets.addTopLevelItem(item)
 
     def tw_check_item(self):
+        # toggle watch on each selected items
         for selected_item in self.tw_assets.selectedItems():
-            self.tw_toggle_watchme(selected_item, COL_WTCH)
+            self.tw_toggle_watchme(selected_item, COL_WTCH, False)
+        # update tw_assets list if necessary (filters applied)
+        self.tw_refresh()
 
-    def tw_toggle_watchme(self, item, column):
+    def tw_toggle_watchme(self, item, column, auto_refresh=True):
         if column != COL_WTCH:
             return
 
@@ -228,11 +239,46 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             return
 
         # inverting check state
-        state = not item.isChecked(COL_WTCH)
+        state = not item.checkState(COL_WTCH)
 
         item.asset.watchme = state
         item.setCheckState(COL_WTCH, (QtCore.Qt.Checked if state else QtCore.Qt.Unchecked))
+        item.setText(COL_UPDT, ("Yes" if item.asset.updatable else ""))
         self.assets.save_watch_list()
+
+        # update tw_assets list if necessary (filters applied)
+        if auto_refresh:
+            self.tw_refresh()
+
+    def tw_refresh(self):
+        if self.btn_watched.isChecked() or self.btn_updates.isChecked():
+            self.tw_update_list()
+        # update status in status bar
+        self.sb_update_summary()
+
+    # STATUS BAR
+    def sb_update_summary(self):
+        updated_list = self.assets.updatable_list()
+        count_watched = len(self.assets.watch_list())
+        count_updates = len(updated_list)
+        total_size = 0
+        for item in updated_list:
+            total_size += item.c_size
+
+        # item count
+        count_items = 0
+        if self.btn_grouped.isChecked():
+            # counting children in case of grouping
+            for index in range(self.tw_assets.topLevelItemCount()):
+                parent = self.tw_assets.topLevelItem(index)
+                count_items += parent.childCount()
+        else:
+            # not grouped
+            count_items = self.tw_assets.topLevelItemCount()
+
+        self.statusbar.showMessage(f"{count_updates} updates, {count_watched} watched,"
+                                   f" {count_items}/{len(self.assets)} displayed, "
+                                   f" {total_size//1024//1024} MB to download")
 
     # ABOUT ACTION
     def about_dlg(self):
