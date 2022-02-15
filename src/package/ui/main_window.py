@@ -166,6 +166,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             item.setCheckState(COL_WTCH, (QtCore.Qt.Checked if asset.watchme else QtCore.Qt.Unchecked))
             item.setTextAlignment(COL_WTCH, QtCore.Qt.AlignCenter)
 
+            item.setText(COL_UPDT, ("Yes" if asset.updatable else ""))
+            item.setTextAlignment(COL_UPDT, QtCore.Qt.AlignCenter)
+
         for item in tree_root:
             self.tw_assets.addTopLevelItem(tree_root[item])
 
@@ -203,6 +206,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
             item.setCheckState(COL_WTCH, (QtCore.Qt.Checked if asset.watchme else QtCore.Qt.Unchecked))
             item.setTextAlignment(COL_WTCH, QtCore.Qt.AlignCenter)
+
+            item.setText(COL_UPDT, ("Yes" if asset.updatable else ""))
+            item.setTextAlignment(COL_UPDT, QtCore.Qt.AlignCenter)
 
             self.tw_assets.addTopLevelItem(item)
 
