@@ -46,8 +46,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.tw_assets.itemPressed['QTreeWidgetItem*', 'int'].connect(self.tw_toggle_watchme)
 
         # self.tw_assets.itemPressed['QTreeWidgetItem*', 'int'].connect(self.toggleDownload_onItem)
-        self.cb_updates.clicked.connect(self.tw_update_list)
-        self.cb_grouped.clicked.connect(self.tw_update_list)
+        self.btn_grouped.clicked.connect(self.tw_update_list)
+        self.btn_watched.clicked.connect(self.tw_update_list)
+        self.btn_updates.clicked.connect(self.tw_update_list)
 
         self.btn_download.clicked.connect(self.download_start)
         self.btn_abort.clicked.connect(self.download_stop)
@@ -95,7 +96,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         # empty the list
         self.tw_assets.clear()
 
-        if self.cb_grouped.checkState():
+        if self.btn_grouped.isChecked():
             # fill TreeWidget as a tree
             self.tw_populate_as_tree()
         else:
@@ -124,7 +125,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     def tw_populate_as_tree(self):
         asset_filter = self.le_filter.text()
-        updates_only = self.cb_updates.isChecked()
+        watched_only = self.btn_watched.isChecked()
+        updates_only = self.btn_updates.isChecked()
 
         tree_root = {}
 
@@ -135,6 +137,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         for key in self.assets.keys():
             asset = self.assets[key]
             if asset_filter is not None and asset_filter.lower() not in asset.name.lower():
+                continue
+            if watched_only and not asset.watchme:
                 continue
             if updates_only and not asset.updatable:
                 continue
@@ -167,7 +171,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     def tw_populate_as_list(self):
         le_filter = self.le_filter.text()
-        updates_only = self.cb_updates.isChecked()
+        watched_only = self.btn_watched.isChecked()
+        updates_only = self.btn_updates.isChecked()
 
         if self.assets is None or len(self.assets) == 0:
             return
@@ -176,6 +181,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         for key in self.assets.keys():
             asset = self.assets[key]
             if le_filter is not None and le_filter.lower() not in asset.name.lower():
+                continue
+            if watched_only and not asset.watchme:
                 continue
             if updates_only and not asset.updatable:
                 continue
@@ -211,11 +218,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             return
 
         # this item is a category
-        if self.cb_grouped.checkState() and item.parent() is None:
+        if self.btn_grouped.isChecked() and item.parent() is None:
             return
 
         # inverting check state
-        state = not item.checkState(COL_WTCH)
+        state = not item.isChecked(COL_WTCH)
 
         item.asset.watchme = state
         item.setCheckState(COL_WTCH, (QtCore.Qt.Checked if state else QtCore.Qt.Unchecked))
