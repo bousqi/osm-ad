@@ -25,7 +25,7 @@
     <item>
      <layout class="QHBoxLayout" name="horizontalLayout">
       <item>
-       <widget class="QLineEdit" name="leFilter">
+       <widget class="QLineEdit" name="le_filter">
         <property name="minimumSize">
          <size>
           <width>250</width>
@@ -41,7 +41,7 @@
        </widget>
       </item>
       <item>
-       <widget class="QPushButton" name="foldButton">
+       <widget class="QPushButton" name="btn_fold">
         <property name="maximumSize">
          <size>
           <width>25</width>
@@ -54,7 +54,7 @@
        </widget>
       </item>
       <item>
-       <widget class="QPushButton" name="unfoldButton">
+       <widget class="QPushButton" name="btn_unfold">
         <property name="maximumSize">
          <size>
           <width>25</width>
@@ -83,7 +83,7 @@
        </spacer>
       </item>
       <item>
-       <widget class="QCheckBox" name="grouped_cBox">
+       <widget class="QCheckBox" name="cb_grouped">
         <property name="text">
          <string>Type Group</string>
         </property>
@@ -93,7 +93,7 @@
        </widget>
       </item>
       <item>
-       <widget class="QCheckBox" name="updates_cBox">
+       <widget class="QCheckBox" name="cb_updates">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
           <horstretch>0</horstretch>
@@ -128,7 +128,7 @@
        </spacer>
       </item>
       <item>
-       <widget class="QPushButton" name="refreshButton">
+       <widget class="QPushButton" name="btn_refresh">
         <property name="minimumSize">
          <size>
           <width>95</width>
@@ -148,7 +148,7 @@
        </widget>
       </item>
       <item>
-       <widget class="QPushButton" name="downloadButton">
+       <widget class="QPushButton" name="btn_download">
         <property name="minimumSize">
          <size>
           <width>95</width>
@@ -171,7 +171,7 @@
        </widget>
       </item>
       <item>
-       <widget class="QPushButton" name="abortButton">
+       <widget class="QPushButton" name="btn_abort">
         <property name="enabled">
          <bool>true</bool>
         </property>
@@ -203,7 +203,7 @@
        </widget>
       </item>
       <item>
-       <widget class="QPushButton" name="aboutButton">
+       <widget class="QPushButton" name="btn_about">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
           <horstretch>0</horstretch>
@@ -243,7 +243,7 @@
      </layout>
     </item>
     <item>
-     <widget class="QProgressBar" name="progressBar_Total">
+     <widget class="QProgressBar" name="pgb_total">
       <property name="maximumSize">
        <size>
         <width>16777215</width>
@@ -259,7 +259,7 @@
      </widget>
     </item>
     <item>
-     <widget class="QTreeWidget" name="osmm_treeWidget">
+     <widget class="QTreeWidget" name="tw_assets">
       <property name="font">
        <font>
         <weight>50</weight>
@@ -336,9 +336,9 @@
  </resources>
  <connections>
   <connection>
-   <sender>unfoldButton</sender>
+   <sender>btn_unfold</sender>
    <signal>clicked()</signal>
-   <receiver>osmm_treeWidget</receiver>
+   <receiver>tw_assets</receiver>
    <slot>collapseAll()</slot>
    <hints>
     <hint type="sourcelabel">
@@ -352,9 +352,9 @@
    </hints>
   </connection>
   <connection>
-   <sender>foldButton</sender>
+   <sender>btn_fold</sender>
    <signal>clicked()</signal>
-   <receiver>osmm_treeWidget</receiver>
+   <receiver>tw_assets</receiver>
    <slot>expandAll()</slot>
    <hints>
     <hint type="sourcelabel">

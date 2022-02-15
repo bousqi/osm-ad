@@ -38,25 +38,25 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     def modify_widgets(self):
         # self.actionDownload.triggered.connect(self.startDownload) # type: ignore
-        self.abortButton.setVisible(False)
-        self.progressBar_Total.setVisible(False)
+        self.btn_abort.setVisible(False)
+        self.pgb_total.setVisible(False)
 
     def setup_connections(self):
-        QShortcut(QtGui.QKeySequence("Space"), self.osmm_treeWidget, self.tw_check_item)
-        self.osmm_treeWidget.itemPressed['QTreeWidgetItem*', 'int'].connect(self.tw_toggle_watchme)
+        QShortcut(QtGui.QKeySequence("Space"), self.tw_assets, self.tw_check_item)
+        self.tw_assets.itemPressed['QTreeWidgetItem*', 'int'].connect(self.tw_toggle_watchme)
 
-        # self.osmm_treeWidget.itemPressed['QTreeWidgetItem*', 'int'].connect(self.toggleDownload_onItem)
-        self.updates_cBox.clicked.connect(self.tw_update_list)
-        self.grouped_cBox.clicked.connect(self.tw_update_list)
+        # self.tw_assets.itemPressed['QTreeWidgetItem*', 'int'].connect(self.toggleDownload_onItem)
+        self.cb_updates.clicked.connect(self.tw_update_list)
+        self.cb_grouped.clicked.connect(self.tw_update_list)
 
-        self.downloadButton.clicked.connect(self.download_start)
-        self.abortButton.clicked.connect(self.download_stop)
+        self.btn_download.clicked.connect(self.download_start)
+        self.btn_abort.clicked.connect(self.download_stop)
 
-        self.leFilter.textChanged.connect(self.tw_update_list)
+        self.le_filter.textChanged.connect(self.tw_update_list)
 
         # about modal config
-        self.aboutButton.clicked.connect(self.about_dlg)
-        self.refreshButton.clicked.connect(self.tw_refresh_assets)
+        self.btn_about.clicked.connect(self.about_dlg)
+        self.btn_refresh.clicked.connect(self.tw_refresh_assets)
 
     def tw_apply_filter(self):
         pass
@@ -65,21 +65,21 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     def download_start(self):
         # updating UI
-        self.refreshButton.setEnabled(False)
-        self.downloadButton.setEnabled(False)
-        self.abortButton.setVisible(True)
-        self.aboutButton.setVisible(False)
-        self.progressBar_Total.setVisible(True)
+        self.btn_refresh.setEnabled(False)
+        self.btn_download.setEnabled(False)
+        self.btn_abort.setVisible(True)
+        self.btn_about.setVisible(False)
+        self.pgb_total.setVisible(True)
 
         # starting download
         pass
 
     def download_stop(self):
-        self.refreshButton.setEnabled(True)
-        self.downloadButton.setEnabled(True)
-        self.abortButton.setVisible(False)
-        self.aboutButton.setVisible(True)
-        self.progressBar_Total.setVisible(False)
+        self.btn_refresh.setEnabled(True)
+        self.btn_download.setEnabled(True)
+        self.btn_abort.setVisible(False)
+        self.btn_about.setVisible(True)
+        self.pgb_total.setVisible(False)
         # updating UI
 
         # stopping download
@@ -93,9 +93,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     def tw_update_list(self):
         # empty the list
-        self.osmm_treeWidget.clear()
+        self.tw_assets.clear()
 
-        if self.grouped_cBox.checkState():
+        if self.cb_grouped.checkState():
             # fill TreeWidget as a tree
             self.tw_populate_as_tree()
         else:
@@ -103,28 +103,28 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.tw_populate_as_list()
 
         #
-        self.osmm_treeWidget.expandAll()
+        self.tw_assets.expandAll()
 
-        self.osmm_treeWidget.sortItems(COL_TYPE, QtCore.Qt.AscendingOrder)
+        self.tw_assets.sortItems(COL_TYPE, QtCore.Qt.AscendingOrder)
 
         # updating col width
-        self.osmm_treeWidget.resizeColumnToContents(COL_TYPE)
-        if self.osmm_treeWidget.columnWidth(COL_TYPE) < 120:
-            self.osmm_treeWidget.setColumnWidth(COL_TYPE, 120)
-        if self.osmm_treeWidget.columnWidth(COL_TYPE) > 200:
-            self.osmm_treeWidget.setColumnWidth(COL_TYPE, 200)
+        self.tw_assets.resizeColumnToContents(COL_TYPE)
+        if self.tw_assets.columnWidth(COL_TYPE) < 120:
+            self.tw_assets.setColumnWidth(COL_TYPE, 120)
+        if self.tw_assets.columnWidth(COL_TYPE) > 200:
+            self.tw_assets.setColumnWidth(COL_TYPE, 200)
 
-        self.osmm_treeWidget.setColumnWidth(COL_NAME, 400)
-        self.osmm_treeWidget.setColumnWidth(COL_DATE, 100)
-        self.osmm_treeWidget.setColumnWidth(COL_COMP, 100)
-        self.osmm_treeWidget.setColumnWidth(COL_SIZE, 100)
-        self.osmm_treeWidget.setColumnWidth(COL_WTCH, 20)
-        self.osmm_treeWidget.setColumnWidth(COL_UPDT, 20)
+        self.tw_assets.setColumnWidth(COL_NAME, 400)
+        self.tw_assets.setColumnWidth(COL_DATE, 100)
+        self.tw_assets.setColumnWidth(COL_COMP, 100)
+        self.tw_assets.setColumnWidth(COL_SIZE, 100)
+        self.tw_assets.setColumnWidth(COL_WTCH, 20)
+        self.tw_assets.setColumnWidth(COL_UPDT, 20)
         # self.UI_displayItemCount()
 
     def tw_populate_as_tree(self):
-        asset_filter = self.leFilter.text()
-        updates_only = self.updates_cBox.isChecked()
+        asset_filter = self.le_filter.text()
+        updates_only = self.cb_updates.isChecked()
 
         tree_root = {}
 
@@ -163,11 +163,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             item.setTextAlignment(COL_WTCH, QtCore.Qt.AlignCenter)
 
         for item in tree_root:
-            self.osmm_treeWidget.addTopLevelItem(tree_root[item])
+            self.tw_assets.addTopLevelItem(tree_root[item])
 
     def tw_populate_as_list(self):
-        le_filter = self.leFilter.text()
-        updates_only = self.updates_cBox.isChecked()
+        le_filter = self.le_filter.text()
+        updates_only = self.cb_updates.isChecked()
 
         if self.assets is None or len(self.assets) == 0:
             return
@@ -197,10 +197,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             item.setCheckState(COL_WTCH, (QtCore.Qt.Checked if asset.watchme else QtCore.Qt.Unchecked))
             item.setTextAlignment(COL_WTCH, QtCore.Qt.AlignCenter)
 
-            self.osmm_treeWidget.addTopLevelItem(item)
+            self.tw_assets.addTopLevelItem(item)
 
     def tw_check_item(self):
-        for selected_item in self.osmm_treeWidget.selectedItems():
+        for selected_item in self.tw_assets.selectedItems():
             self.tw_toggle_watchme(selected_item, COL_WTCH)
 
     def tw_toggle_watchme(self, item, column):
@@ -211,7 +211,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             return
 
         # this item is a category
-        if self.grouped_cBox.checkState() and item.parent() is None:
+        if self.cb_grouped.checkState() and item.parent() is None:
             return
 
         # inverting check state

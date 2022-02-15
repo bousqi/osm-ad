@@ -43,7 +43,7 @@ Commands:
 This command line interface allows three basic operation :
 1) Listing assets available on server 
 ````
-Usage: osmm_cli.py list [OPTIONS]
+Usage: osmad_cli.py list [OPTIONS]
 
   List assets available in cache
 
@@ -58,7 +58,7 @@ Options:
 ````
 2) Handling watch list 
 ````
-Usage: osmm_cli.py watch [OPTIONS]
+Usage: osmad_cli.py watch [OPTIONS]
 
   Watch list management
 
@@ -71,7 +71,7 @@ Options:
 ````
 3) Pulling updates available
 ````
-Usage: osmm_cli.py update [OPTIONS]
+Usage: osmad_cli.py update [OPTIONS]
 
   Download/Update assets based on watch list
 
@@ -107,11 +107,10 @@ $ python -m pip install -r requirements_gui.txt
 #### GUI
 Before launching the application, you must build UIs and Resource file with the following commands
 ##### Generate UIs
-	$ pyuic5 gui/main.ui -o gui/main.py
-	$ pyuic5 gui/about.ui -o gui/about.py
+	$ pyuic5 src/ui/main.ui -o src/ui/main.py
 
 ##### Generate Res file
-	$ pyrcc5 osmad_res.qrc -o osmad_res_rc.py
+	$ pyrcc5 resources.qrc -o resources_rc.py
 
 
 ### Create native executable
