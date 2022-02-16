@@ -15,7 +15,12 @@ OpenStreeMap - Asset Downloader
 <br />
 
 
-Purpose : blalbla
+<u>Purpose</u> : This application is a PoC that allows to list contents from OsmAnd 
+server, download and extract them. Next you can those copy files onto your
+mobile to get an always up to date maps in OsmAnd free app (free version allows
+only 7 updates).
+  
+ **If you like OsmAnd, buy it.**
 <br />
 
 Powered by Python 3.8, PyQT 5.15
