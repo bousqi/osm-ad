@@ -7,8 +7,8 @@ line** application to define a set of map and feed the latest updates available.
 downloaded maps could be copied into your smartphone over ADB or any network share.
 
 ## Summary
-
-- [OsmAnd Maps downloader (CLI &amp; GUI)](#osmand-maps-downloader--cli--amp--gui-)
+- [Open Street Map - Assets Downloader (CLI &amp; GUI)](#open-street-map---assets-downloader--cli--amp--gui-)
+  * [Summary](#summary)
   * [Usage](#usage)
     + [Graphical User Interface](#graphical-user-interface)
     + [Command Line Interface](#command-line-interface)
@@ -21,6 +21,7 @@ downloaded maps could be copied into your smartphone over ADB or any network sha
 ## Usage
 
 ### Graphical User Interface
+![](./res/about.png)
 ![](./res/screenshot.png)
 
 ### Command Line Interface
@@ -107,10 +108,10 @@ $ python -m pip install -r requirements_gui.txt
 #### GUI
 Before launching the application, you must build UIs and Resource file with the following commands
 ##### Generate UIs
-	$ pyuic5 src/ui/main.ui -o src/ui/main.py
+	$ pyuic5 src/ui/ui_main.ui -o src/ui/ui_main.py
 
 ##### Generate Res file
-	$ pyrcc5 resources.qrc -o resources_rc.py
+	$ pyrcc5 src/resources.qrc -o src/resources_rc.py
 
 
 ### Create native executable
@@ -118,7 +119,7 @@ Before launching the application, you must build UIs and Resource file with the 
 In order to create a native executable (easier to deploy), you should proceed as following :
 
 1. Install dependencies `$ python -m pip install pyinstaller`
-2. Generate self contained binary
+2. Generate self-contained binaries
 
 
 #### CLI
