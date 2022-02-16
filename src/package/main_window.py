@@ -236,11 +236,15 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     # ABOUT ACTION
     def about_dlg(self):
         msg_box = QMessageBox(QMessageBox.Information, "About", OSMAD_ABOUT_INFO, QMessageBox.Ok)
+
         icon = QtGui.QIcon()
         icon.addPixmap(QtGui.QPixmap(":/img/resources/base/maps.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         msg_box.setWindowIcon(icon)
-        msg_box.setIconPixmap(QtGui.QPixmap(":/img/resources/base/maps.png").scaledToWidth(128, QtCore.Qt.SmoothTransformation))
+
+        pixmap = QtGui.QPixmap(":/img/resources/base/maps.png").scaledToWidth(128, QtCore.Qt.SmoothTransformation)
+        msg_box.setIconPixmap(pixmap)
         msg_box.setTextFormat(QtCore.Qt.MarkdownText)
+
         layout = msg_box.layout()
         widget = PyQt5.QtWidgets.QWidget()
         widget.setFixedSize(550, 1)

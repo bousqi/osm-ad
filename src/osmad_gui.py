@@ -1,7 +1,7 @@
 import sys
 from PyQt5.QtWidgets import QApplication
 
-from package.ui.main_window import MainWindow
+from package.main_window import MainWindow
 
 
 sys._excepthook = sys.excepthook

@@ -6,7 +6,7 @@ from collections import OrderedDict
 
 import requests
 import xmltodict
-from typing import List
+from typing import List, Dict
 
 from package.api.constants import *
 from package.api.osm_asset import OsmAsset
@@ -74,7 +74,7 @@ class OsmAssets(dict):
         filtered_indexes = self.filter(cat=cat)
         return sorted(set([filtered_indexes[key].area for key in filtered_indexes.keys()]))
 
-    def filter(self, cat=None, country=None, updatable=None):
+    def filter(self, cat=None, country=None, updatable=None) -> Dict[str, OsmAsset]:
         # no filters
         if cat is None and country is None and updatable is None:
             return self

@@ -1,5 +1,4 @@
 import typing
-from datetime import datetime
 from PyQt5 import QtWidgets, QtCore
 
 from package.api.osm_asset import OsmAsset
@@ -15,14 +14,17 @@ class AssetTreeWidgetItem(QtWidgets.QTreeWidgetItem):
         for col in range(COL_PROG+1):
             self.setTextAlignment(col, self.textAlignment(col))
 
-    def __lt__(self, other_item):
+        # not a parent
+        if self.asset:
+            self.setCheckState(COL_WTCH, QtCore.Qt.Unchecked)
+            self.setFlags(QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled)
 
+    def __lt__(self, other_item):
         column = self.treeWidget().sortColumn()
 
         # is item or other item a group
         if not self.asset or not other_item.asset:
             return self.text(column).lower() < other_item.text(column).lower()
-            return False
 
         # Size compare
         if column == COL_SIZE:
@@ -78,7 +80,8 @@ class AssetTreeWidgetItem(QtWidgets.QTreeWidgetItem):
         if column == COL_SIZE:
             return str(self.asset.e_size // 1024 // 1024) + "MB"
         if column == COL_WTCH:
-            # self.setCheckState(COL_WTCH, (QtCore.Qt.Checked if self.asset.watchme else QtCore.Qt.Unchecked))
+            if self.asset.watchme != self.checkState(COL_WTCH):
+                self.setCheckState(COL_WTCH, (QtCore.Qt.Checked if self.asset.watchme else QtCore.Qt.Unchecked))
             return ""
         if column == COL_UPDT:
             return "Yes" if self.asset.updatable else ""
