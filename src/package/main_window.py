@@ -1,7 +1,11 @@
+import time
+from typing import List
+
 import PyQt5.QtGui
 from PyQt5 import QtGui, QtCore
 from PyQt5.QtWidgets import QMainWindow, QMessageBox, QShortcut
 
+from package.api.osm_asset import OsmAsset
 from package.ui.ui_main import Ui_MainWindow
 from package.api.osm_assets import OsmAssets
 from package.gui_constants import *
@@ -41,7 +45,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.btn_updates.clicked.connect(self.tw_update_list)
 
         self.btn_download.clicked.connect(self.download_start)
-        self.btn_abort.clicked.connect(self.download_stop)
+        self.btn_abort.clicked.connect(self.download_abort)
 
         self.le_filter.textChanged.connect(self.tw_update_list)
 
@@ -54,7 +58,30 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     # DOWNLOAD ACTIONS
 
+    def download_process(self, dld_list: List[OsmAsset]):
+        asset: OsmAsset
+        for index, asset in enumerate(dld_list):
+            for part in range (asset.c_size//1024//1024):
+                time.sleep(0.01)
+                self.download_slot_file_progress(asset, int(part*1024*1024))
+                # force ui redraw
+                self.app.processEvents()
+                # abort request
+                if self.early_exit:
+                    return
+
+            self.download_slot_file_finished(asset)
+            self.download_slot_all_progress(index+1, len(dld_list))
+            # force ui redraw
+            self.app.processEvents()
+        self.download_slot_all_finished()
+
     def download_start(self):
+        dld_list = self.assets.updatable_list()
+        if not dld_list:
+            # nothing to download
+            return
+
         # updating UI
         self.btn_refresh.setEnabled(False)
         self.btn_download.setEnabled(False)
@@ -62,8 +89,27 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.btn_about.setVisible(False)
         self.pgb_total.setVisible(True)
 
+        #
+        self.pgb_total.setRange(0, len(dld_list))
+        self.pgb_total.setValue(0)
+
+        print(f"{len(dld_list)} to download")
+
+        for asset in dld_list:
+            asset_item = self.tw_get_item(asset)
+            print(str(asset_item) + " " + repr(asset))
+
         # starting download
-        pass
+        self.early_exit = False
+        self.download_process(dld_list)
+
+    def download_abort(self):
+        self.early_exit = True
+        self.download_stop()
+
+        for asset in self.assets.updatable_list():
+            if asset.updatable:
+                self.tw_get_item(asset).setText(COL_PROG, "ABORTED")
 
     def download_stop(self):
         self.btn_refresh.setEnabled(True)
@@ -75,6 +121,31 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
         # stopping download
         pass
+
+    def download_slot_file_progress(self, asset: OsmAsset, size):
+        ratio = int(size*100/asset.c_size)
+        self.pgb_total.setRange(0, asset.c_size)
+        self.pgb_total.setValue(size)
+        self.tw_get_item(asset).setText(COL_PROG, "{:>3}%".format(ratio))
+
+        #print("{} : {}%".format(asset.name, ratio, end="\r"))
+
+    def download_slot_file_finished(self, asset: OsmAsset):
+        #print("Downloaded: {}".format(asset.name))
+        asset.downloaded()
+
+        item = self.tw_get_item(asset)
+        item.emitDataChanged()
+        self.sb_update_summary()
+        item.setText(COL_PROG, "Done")
+
+    def download_slot_all_progress(self, current, total):
+        self.pgb_total.setValue(current)
+        #print("Files downloaded: {}/{}".format(current, total))
+
+    def download_slot_all_finished(self):
+        #print("All finished")
+        self.download_stop()
 
     # TREEWIDGET MANAGEMENT
     def tw_refresh_assets(self):
@@ -232,6 +303,26 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.statusbar.showMessage(f"{count_updates} updates, {count_watched} watched,"
                                    f" {count_items}/{len(self.assets)} displayed, "
                                    f" {total_size//1024//1024} MB to download")
+
+    def tw_get_item(self, asset: OsmAsset) -> AssetTreeWidgetItem:
+        if self.btn_grouped.isChecked():
+            # searching in tree
+            cat_item: AssetTreeWidgetItem
+            for index in range(self.tw_assets.topLevelItemCount()):
+                cat_item = self.tw_assets.topLevelItem(index)
+                if asset.type == cat_item.text(COL_TYPE):
+                    for child_index in range(cat_item.childCount()):
+                        asset_item = cat_item.child(child_index)
+                        if asset == asset_item.asset:
+                            return asset_item
+        else:
+            # searching in list
+            asset_item: AssetTreeWidgetItem
+            for index in range(self.tw_assets.topLevelItemCount()):
+                asset_item = self.tw_assets.topLevelItem(index)
+                if asset == asset_item.asset:
+                    return asset_item
+        return None
 
     # ABOUT ACTION
     def about_dlg(self):

@@ -86,4 +86,8 @@ class AssetTreeWidgetItem(QtWidgets.QTreeWidgetItem):
         if column == COL_UPDT:
             return "Yes" if self.asset.updatable else ""
 
+        # default behavior
+        return super().data(column, role)
+
+
 
