@@ -5,20 +5,7 @@ from PyQt5.QtWidgets import QMainWindow, QMessageBox, QShortcut
 from package.ui.ui_main import Ui_MainWindow
 from package.api.osm_assets import OsmAssets
 from package.gui_constants import *
-
-""" CONSTANTS """
-
-COL_TYPE = 0
-COL_NAME = 1
-COL_DATE = 2
-COL_COMP = 3
-COL_SIZE = 4
-COL_WTCH = 5
-COL_UPDT = 6
-COL_PROG = 7
-
-
-""" CLASSES """
+from package.asset_tw_item import AssetTreeWidgetItem
 
 
 class MainWindow(QMainWindow, Ui_MainWindow):
@@ -154,29 +141,13 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
             cat = asset.type
             if cat not in tree_root:
-                root_item = PyQt5.QtWidgets.QTreeWidgetItem()
+                root_item = AssetTreeWidgetItem()
                 root_item.setText(COL_TYPE, cat)
                 tree_root[cat] = root_item
             else:
                 root_item = tree_root[cat]
 
-            item = PyQt5.QtWidgets.QTreeWidgetItem(root_item)
-            item.asset = asset
-            item.setText(COL_TYPE, asset.area)
-            item.setText(COL_NAME, asset.name)
-            item.setText(COL_DATE, asset.remote_date)
-            item.setText(COL_COMP, str(asset.c_size // 1024 // 1024) + " MB")
-            item.setTextAlignment(COL_COMP, QtCore.Qt.AlignRight)
-
-            item.setText(COL_SIZE, str(asset.e_size // 1024 // 1024) + " MB")
-            item.setTextAlignment(COL_SIZE, QtCore.Qt.AlignRight)
-            item.setFlags(QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled)
-
-            item.setCheckState(COL_WTCH, (QtCore.Qt.Checked if asset.watchme else QtCore.Qt.Unchecked))
-            item.setTextAlignment(COL_WTCH, QtCore.Qt.AlignCenter)
-
-            item.setText(COL_UPDT, ("Yes" if asset.updatable else ""))
-            item.setTextAlignment(COL_UPDT, QtCore.Qt.AlignCenter)
+            AssetTreeWidgetItem(parent=root_item, asset=asset)
 
         for item in tree_root:
             self.tw_assets.addTopLevelItem(tree_root[item])
@@ -199,26 +170,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             if updates_only and not asset.updatable:
                 continue
 
-            item = PyQt5.QtWidgets.QTreeWidgetItem()
-            item.asset = asset
-            item.setText(COL_TYPE, asset.type)
-            item.setText(COL_NAME, asset.name)
-            item.setText(COL_DATE, asset.remote_date)
-            item.setTextAlignment(COL_DATE, QtCore.Qt.AlignCenter)
-
-            item.setText(COL_COMP, str(asset.c_size // 1024 // 1024) + " MB")
-            item.setTextAlignment(COL_COMP, QtCore.Qt.AlignRight)
-
-            item.setText(COL_SIZE, str(asset.e_size // 1024 // 1024) + " MB")
-            item.setTextAlignment(COL_SIZE, QtCore.Qt.AlignRight)
-            item.setFlags(QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled)
-
-            item.setCheckState(COL_WTCH, (QtCore.Qt.Checked if asset.watchme else QtCore.Qt.Unchecked))
-            item.setTextAlignment(COL_WTCH, QtCore.Qt.AlignCenter)
-
-            item.setText(COL_UPDT, ("Yes" if asset.updatable else ""))
-            item.setTextAlignment(COL_UPDT, QtCore.Qt.AlignCenter)
-
+            item = AssetTreeWidgetItem(asset=asset)
             self.tw_assets.addTopLevelItem(item)
 
     def tw_check_item(self):
