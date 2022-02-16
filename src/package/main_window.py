@@ -1,6 +1,8 @@
-import time
+import os
+import urllib
 from typing import List
 
+import requests
 import PyQt5.QtGui
 from PyQt5 import QtGui, QtCore
 from PyQt5.QtWidgets import QMainWindow, QMessageBox, QShortcut
@@ -19,6 +21,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
         self.assets = OsmAssets()
         self.app = app
+        self.early_exit = False
 
         # class instance vars init
         # UI init
@@ -60,21 +63,97 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     def download_process(self, dld_list: List[OsmAsset]):
         asset: OsmAsset
-        for index, asset in enumerate(dld_list):
-            for part in range (asset.c_size//1024//1024):
-                time.sleep(0.01)
-                self.download_slot_file_progress(asset, int(part*1024*1024))
-                # force ui redraw
-                self.app.processEvents()
-                # abort request
-                if self.early_exit:
-                    return
 
-            self.download_slot_file_finished(asset)
+        # checking assets dir exists before using it
+        if not os.path.isdir(CFG_DIR_ASSETS):
+            os.makedirs(CFG_DIR_ASSETS)
+
+        # processing all files
+        for index, asset in enumerate(dld_list):
+            if not self.download_is_complete(asset):
+                res = self.download_asset(asset)
+            else:
+                res = True
+
+            self.download_slot_file_finished(asset, res)
+
+            # abort request
+            if self.early_exit:
+                return
+
             self.download_slot_all_progress(index+1, len(dld_list))
             # force ui redraw
             self.app.processEvents()
+
         self.download_slot_all_finished()
+
+    def download_is_complete(self, asset: OsmAsset):
+        if asset is None:
+            return True
+
+        # comparing watchlist and remote timestamps
+        if asset.remote_ts > asset.local_ts:
+            return False
+
+        path = os.path.join(CFG_DIR_ASSETS, asset.filename)
+        # is file already there ?
+        if not os.path.isfile(path):
+            return False
+
+        # is existing file incomplete ?
+        if int(os.path.getsize(path)) != int(asset.c_size):
+            return False
+
+        # no need to download
+        return True
+
+    def download_asset(self, asset: OsmAsset):
+        # opening connection to resource
+        try:
+            r = requests.get(asset.url, headers=USER_AGENT,
+                             proxies=urllib.request.getproxies(),
+                             verify=CFG_SSL_VERIFY,
+                             stream=True)
+        except requests.exceptions.ConnectionError:
+            r = None
+        # is request success ?
+        if r and r.status_code != requests.codes.ok:
+            return False
+
+        # downloading
+
+        # Set configuration
+        block_size = 1024
+        file = os.path.join(CFG_DIR_ASSETS, asset.filename)
+
+        try:
+            pos = 0
+            # creating output file
+            with open(file, "wb") as f:
+                # getting stream chunks to write
+                for chunk in r.iter_content(32 * block_size):
+                    f.write(chunk)
+                    pos += len(chunk)
+                    self.download_slot_file_progress(asset, pos)
+                    self.app.processEvents()
+
+                    # abort request
+                    if self.early_exit:
+                        return False
+
+        except requests.exceptions.Timeout as e:
+            # Maybe set up for a retry, or continue in a retry loop
+            self.statusbar.showMessage("ERROR: server timeout")
+            print("ERROR: " + str(e))
+        except requests.exceptions.TooManyRedirects as e:
+            # Tell the user their URL was bad and try a different one
+            self.statusbar.showMessage("ERROR: too many redirects")
+            print("ERROR: " + str(e))
+        except requests.exceptions.RequestException:
+            # catastrophic error, try next
+            pass
+
+        return True
 
     def download_start(self):
         dld_list = self.assets.updatable_list()
@@ -93,11 +172,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.pgb_total.setRange(0, len(dld_list))
         self.pgb_total.setValue(0)
 
-        print(f"{len(dld_list)} to download")
-
-        for asset in dld_list:
-            asset_item = self.tw_get_item(asset)
-            print(str(asset_item) + " " + repr(asset))
+        # print(f"{len(dld_list)} to download")
+        #
+        # for asset in dld_list:
+        #     asset_item = self.tw_get_item(asset)
+        #     print(str(asset_item) + " " + repr(asset))
 
         # starting download
         self.early_exit = False
@@ -109,18 +188,18 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
         for asset in self.assets.updatable_list():
             if asset.updatable:
-                self.tw_get_item(asset).setText(COL_PROG, "ABORTED")
+                self.tw_get_item(asset).setText(COL_PROG, "Aborted")
 
     def download_stop(self):
+        # updating UI
         self.btn_refresh.setEnabled(True)
         self.btn_download.setEnabled(True)
         self.btn_abort.setVisible(False)
         self.btn_about.setVisible(True)
         self.pgb_total.setVisible(False)
-        # updating UI
 
-        # stopping download
-        pass
+        # saving assets changes (file downloaded)
+        # self.assets.save_watch_list()
 
     def download_slot_file_progress(self, asset: OsmAsset, size):
         ratio = int(size*100/asset.c_size)
@@ -128,23 +207,20 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.pgb_total.setValue(size)
         self.tw_get_item(asset).setText(COL_PROG, "{:>3}%".format(ratio))
 
-        #print("{} : {}%".format(asset.name, ratio, end="\r"))
-
-    def download_slot_file_finished(self, asset: OsmAsset):
-        #print("Downloaded: {}".format(asset.name))
-        asset.downloaded()
+    def download_slot_file_finished(self, asset: OsmAsset, success):
+        if success:
+            asset.downloaded()
 
         item = self.tw_get_item(asset)
         item.emitDataChanged()
         self.sb_update_summary()
-        item.setText(COL_PROG, "Done")
+
+        item.setText(COL_PROG, "Done" if success else "Failed")
 
     def download_slot_all_progress(self, current, total):
         self.pgb_total.setValue(current)
-        #print("Files downloaded: {}/{}".format(current, total))
 
     def download_slot_all_finished(self):
-        #print("All finished")
         self.download_stop()
 
     # TREEWIDGET MANAGEMENT
