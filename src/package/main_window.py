@@ -13,6 +13,15 @@ from package.api.osm_assets import OsmAssets
 from package.gui_constants import *
 from package.asset_tw_item import AssetTreeWidgetItem
 
+"""
+TODO : 
+ * Create thread ans worker for download
+ * Improve thread with QThreadPool
+ * compute download speed
+ * loop on dld item to extract
+ * rename extracted items
+"""
+
 
 class MainWindow(QMainWindow, Ui_MainWindow):
     def __init__(self, app):
