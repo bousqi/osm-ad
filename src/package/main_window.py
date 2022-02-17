@@ -81,7 +81,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             if self.early_exit:
                 return
 
-            self.download_slot_all_progress(index+1, len(dld_list))
+            self.download_slot_all_progress(index+1)
             # force ui redraw
             self.app.processEvents()
 
@@ -131,7 +131,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             # creating output file
             with open(file, "wb") as f:
                 # getting stream chunks to write
-                for chunk in r.iter_content(32 * block_size):
+                for chunk in r.iter_content(64 * block_size):
                     f.write(chunk)
                     pos += len(chunk)
                     self.download_slot_file_progress(asset, pos)
@@ -172,12 +172,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.pgb_total.setRange(0, len(dld_list))
         self.pgb_total.setValue(0)
 
-        # print(f"{len(dld_list)} to download")
-        #
-        # for asset in dld_list:
-        #     asset_item = self.tw_get_item(asset)
-        #     print(str(asset_item) + " " + repr(asset))
-
         # starting download
         self.early_exit = False
         self.download_process(dld_list)
@@ -187,8 +181,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.download_stop()
 
         for asset in self.assets.updatable_list():
+            asset_item = self.tw_get_item(asset)
+            self.tw_assets.removeItemWidget(asset_item, COL_PROG)
+            asset_item.progress_bar = None
+
             if asset.updatable:
-                self.tw_get_item(asset).setText(COL_PROG, "Aborted")
+                asset_item.setText(COL_PROG, "Aborted")
 
     def download_stop(self):
         # updating UI
@@ -198,14 +196,24 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.btn_about.setVisible(True)
         self.pgb_total.setVisible(False)
 
+        self.btn_download.setEnabled(len(self.assets.updatable_list()) > 0)
+
         # saving assets changes (file downloaded)
         # self.assets.save_watch_list()
 
     def download_slot_file_progress(self, asset: OsmAsset, size):
-        ratio = int(size*100/asset.c_size)
-        self.pgb_total.setRange(0, asset.c_size)
-        self.pgb_total.setValue(size)
-        self.tw_get_item(asset).setText(COL_PROG, "{:>3}%".format(ratio))
+        asset_item = self.tw_get_item(asset)
+
+        if not asset_item.progress_bar:
+            max_height = self.tw_assets.visualItemRect(asset_item).height()
+
+            # progressBar on last col
+            asset_item.progress_bar = PyQt5.QtWidgets.QProgressBar()
+            asset_item.progress_bar.setMaximumHeight(max_height)
+            asset_item.progress_bar.setRange(0, asset.c_size)
+            self.tw_assets.setItemWidget(asset_item, COL_PROG, asset_item.progress_bar)
+
+        asset_item.progress_bar.setValue(size)
 
     def download_slot_file_finished(self, asset: OsmAsset, success):
         if success:
@@ -217,13 +225,13 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
         item.setText(COL_PROG, "Done" if success else "Failed")
 
-    def download_slot_all_progress(self, current, total):
+    def download_slot_all_progress(self, current):
         self.pgb_total.setValue(current)
 
     def download_slot_all_finished(self):
         self.download_stop()
 
-    # TREEWIDGET MANAGEMENT
+    # TREE WIDGET MANAGEMENT
     def tw_refresh_assets(self):
         self.btn_refresh.setEnabled(False)
         self.app.processEvents()                    # Trick to update UI
@@ -264,6 +272,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.tw_assets.setColumnWidth(COL_WTCH, 20)
         self.tw_assets.setColumnWidth(COL_UPDT, 20)
 
+        # updating other elements
+        self.btn_download.setEnabled(len(self.assets.updatable_list()) > 0)
         self.sb_update_summary()
 
     def tw_populate_as_tree(self):
@@ -288,16 +298,18 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
             cat = asset.type
             if cat not in tree_root:
+                # new cat to be created
                 root_item = AssetTreeWidgetItem()
                 root_item.setText(COL_TYPE, cat)
+                # adding to tree
+                self.tw_assets.addTopLevelItem(root_item)
+                # saving to dict
                 tree_root[cat] = root_item
             else:
                 root_item = tree_root[cat]
 
+            # item to be added in a specific cat
             AssetTreeWidgetItem(parent=root_item, asset=asset)
-
-        for item in tree_root:
-            self.tw_assets.addTopLevelItem(tree_root[item])
 
     def tw_populate_as_list(self):
         le_filter = self.le_filter.text()
@@ -317,6 +329,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             if updates_only and not asset.updatable:
                 continue
 
+            # create and add item to treeWidget
             item = AssetTreeWidgetItem(asset=asset)
             self.tw_assets.addTopLevelItem(item)
 
@@ -355,6 +368,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.tw_update_list()
         # update status in status bar
         self.sb_update_summary()
+        # update download button
+        self.btn_download.setEnabled(len(self.assets.updatable_list()) > 0)
 
     # STATUS BAR
     def sb_update_summary(self):

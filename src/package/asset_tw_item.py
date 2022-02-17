@@ -14,8 +14,11 @@ class AssetTreeWidgetItem(QtWidgets.QTreeWidgetItem):
         for col in range(COL_PROG+1):
             self.setTextAlignment(col, self.textAlignment(col))
 
+        self.progress_bar = None
+
         # not a parent
         if self.asset:
+            # checkbox on Watch col
             self.setCheckState(COL_WTCH, QtCore.Qt.Unchecked)
             self.setFlags(QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled)
 
