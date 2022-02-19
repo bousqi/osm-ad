@@ -1,4 +1,5 @@
 import os
+import time
 import urllib
 from typing import List
 
@@ -31,6 +32,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.assets = OsmAssets()
         self.app = app
         self.early_exit = False
+        self.sb_message = ""
 
         # class instance vars init
         # UI init
@@ -135,6 +137,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         block_size = 1024
         file = os.path.join(CFG_DIR_ASSETS, asset.filename)
 
+        ref_time = time.time() * 1000
+        ref_bytes = 0
+
         try:
             pos = 0
             # creating output file
@@ -143,6 +148,18 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 for chunk in r.iter_content(64 * block_size):
                     f.write(chunk)
                     pos += len(chunk)
+
+                    # speed calculation
+                    cur_time = time.time() * 1000
+                    if cur_time - ref_time > 1000:  # 1s
+                        speed = ((pos - ref_bytes) / ((cur_time - ref_time)/1000))
+                        # updating UI
+                        self.sb_update_bandwidth(speed)
+                        # updating ref for next time
+                        ref_time = cur_time
+                        ref_bytes = pos
+
+                    # update UI
                     self.download_slot_file_progress(asset, pos)
                     self.app.processEvents()
 
@@ -380,6 +397,26 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         # update download button
         self.btn_download.setEnabled(len(self.assets.updatable_list()) > 0)
 
+    def tw_get_item(self, asset: OsmAsset) -> AssetTreeWidgetItem:
+        if self.btn_grouped.isChecked():
+            # searching in tree
+            cat_item: AssetTreeWidgetItem
+            for index in range(self.tw_assets.topLevelItemCount()):
+                cat_item = self.tw_assets.topLevelItem(index)
+                if asset.type == cat_item.text(COL_TYPE):
+                    for child_index in range(cat_item.childCount()):
+                        asset_item = cat_item.child(child_index)
+                        if asset == asset_item.asset:
+                            return asset_item
+        else:
+            # searching in list
+            asset_item: AssetTreeWidgetItem
+            for index in range(self.tw_assets.topLevelItemCount()):
+                asset_item = self.tw_assets.topLevelItem(index)
+                if asset == asset_item.asset:
+                    return asset_item
+        return None
+
     # STATUS BAR
     def sb_update_summary(self):
         updated_list = self.assets.updatable_list()
@@ -400,29 +437,21 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             # not grouped
             count_items = self.tw_assets.topLevelItemCount()
 
-        self.statusbar.showMessage(f"{count_updates} updates, {count_watched} watched,"
-                                   f" {count_items}/{len(self.assets)} displayed, "
-                                   f" {total_size//1024//1024} MB to download")
+        self.sb_message = f"{count_updates} updates, {count_watched} watched," \
+                          f" {count_items}/{len(self.assets)} displayed, " \
+                          f" {total_size//1024//1024} MB to download"
+        self.statusbar.showMessage(self.sb_message)
 
-    def tw_get_item(self, asset: OsmAsset) -> AssetTreeWidgetItem:
-        if self.btn_grouped.isChecked():
-            # searching in tree
-            cat_item: AssetTreeWidgetItem
-            for index in range(self.tw_assets.topLevelItemCount()):
-                cat_item = self.tw_assets.topLevelItem(index)
-                if asset.type == cat_item.text(COL_TYPE):
-                    for child_index in range(cat_item.childCount()):
-                        asset_item = cat_item.child(child_index)
-                        if asset == asset_item.asset:
-                            return asset_item
-        else:
-            # searching in list
-            asset_item: AssetTreeWidgetItem
-            for index in range(self.tw_assets.topLevelItemCount()):
-                asset_item = self.tw_assets.topLevelItem(index)
-                if asset == asset_item.asset:
-                    return asset_item
-        return None
+    def sb_update_bandwidth(self, speed):
+        unit = "B/s"
+        if speed > 1024:
+            unit = "KB/s"
+            speed = speed / 1024
+        if speed > 1024:
+            unit = "MB/s"
+            speed = speed / 1024
+
+        self.statusbar.showMessage(f"{self.sb_message} [ {speed:.2f} {unit} ]")
 
     # ABOUT ACTION
     def about_dlg(self):
