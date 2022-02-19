@@ -18,7 +18,6 @@ from package.asset_tw_item import AssetTreeWidgetItem
 TODO : 
  * Create thread ans worker for download
  * Improve thread with QThreadPool
- * compute download speed
  * loop on dld item to extract
  * rename extracted items
 """
@@ -59,7 +58,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.btn_updates.clicked.connect(self.tw_update_list)
 
         self.btn_download.clicked.connect(self.download_start)
-        self.btn_abort.clicked.connect(self.download_abort)
+        self.btn_abort.clicked.connect(self.slot_download_abort)
 
         self.le_filter.textChanged.connect(self.tw_update_list)
 
@@ -72,8 +71,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     # DOWNLOAD ACTIONS
 
-    def download_process(self, dld_list: List[OsmAsset]):
+    def download_process(self, dld_list: List[OsmAsset]) -> List[OsmAsset]:
         asset: OsmAsset
+        to_expand = []
 
         # checking assets dir exists before using it
         if not os.path.isdir(CFG_DIR_ASSETS):
@@ -86,6 +86,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             else:
                 res = True
 
+            to_expand.append(asset)
             self.download_slot_file_finished(asset, res)
 
             # abort request
@@ -93,10 +94,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 return
 
             self.download_slot_all_progress(index+1)
-            # force ui redraw
-            self.app.processEvents()
 
-        self.download_slot_all_finished()
+        return to_expand
 
     def download_is_complete(self, asset: OsmAsset):
         if asset is None:
@@ -181,6 +180,21 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
         return True
 
+    def expand_process(self, exp_list: List[OsmAsset]):
+        self.download_slot_all_progress(0)
+
+        if not exp_list:
+            return
+
+        for index, asset in enumerate(exp_list):
+            self.expand_asset(asset)
+            self.download_slot_all_progress(index)
+
+    def expand_asset(self, asset: OsmAsset):
+        self.slot_expand_file(asset)
+        time.sleep(3)
+        self.slot_expand_file_done(asset)
+
     def download_start(self):
         dld_list = self.assets.updatable_list()
         if not dld_list:
@@ -200,11 +214,13 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
         # starting download
         self.early_exit = False
-        self.download_process(dld_list)
+        to_expand_list = self.download_process(dld_list)
+        self.expand_process(to_expand_list)
+        self.slot_download_all_finished()
 
-    def download_abort(self):
+    def slot_download_abort(self):
         self.early_exit = True
-        self.download_stop()
+        self.slot_download_stop()
 
         for asset in self.assets.updatable_list():
             asset_item = self.tw_get_item(asset)
@@ -214,7 +230,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             if asset.updatable:
                 asset_item.setText(COL_PROG, "Aborted")
 
-    def download_stop(self):
+    def slot_download_stop(self):
         # updating UI
         self.btn_refresh.setEnabled(True)
         self.btn_download.setEnabled(True)
@@ -253,9 +269,31 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     def download_slot_all_progress(self, current):
         self.pgb_total.setValue(current)
+        # force ui redraw
+        self.app.processEvents()
 
-    def download_slot_all_finished(self):
-        self.download_stop()
+    def slot_download_all_finished(self):
+        self.slot_download_stop()
+        # force ui redraw
+        self.app.processEvents()
+
+    def slot_expand_file(self, asset: OsmAsset):
+        asset_item = self.tw_get_item(asset)
+
+        # asset_item.progress_bar: PyQt5.QtWidgets.QProgressBar
+        # asset_item.progress_bar.setVisible(False)
+
+        self.tw_assets.removeItemWidget(asset_item, COL_PROG)
+
+        asset_item.setText(COL_PROG, "Expanding...")
+        # force ui redraw
+        self.app.processEvents()
+
+    def slot_expand_file_done(self, asset: OsmAsset):
+        asset_item = self.tw_get_item(asset)
+        asset_item.setText(COL_PROG, "Done")
+        # force ui redraw
+        self.app.processEvents()
 
     # TREE WIDGET MANAGEMENT
     def tw_refresh_assets(self):
