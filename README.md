@@ -103,6 +103,11 @@ $ python -m pip install -r requirements_cli.txt
 $ python -m pip install -r requirements_gui.txt
 ```
 
+Using linux env, you might require deb packages to be installed
+```
+$ sudo apt install python3-pyqt5 pyqt5-dev-tools
+```
+
 ### Build
 
 #### GUI

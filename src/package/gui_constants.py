@@ -14,23 +14,22 @@ CFG_SSL_VERIFY = True
 CFG_DIR_ASSETS = "assets/"
 CFG_DIR_OUTPUT = "out/"
 
-OSMAD_ABOUT_INFO = """
-OpenStreeMap - Asset Downloader
------------------
+OSMAD_ABOUT_INFO_HTML = """
+<h2><b>OpenStreeMap - Asset Downloader</b></h2>
 <br />
 
 
 <u>Purpose</u> : This application is a PoC that allows to list contents from OsmAnd 
 server, download and extract them. Next you can those copy files onto your
 mobile to get an always up to date maps in OsmAnd free app (free version allows
-only 7 updates).
+only 7 updates).<br />
   
- **If you like OsmAnd, buy it.**
+<b>If you like OsmAnd, buy it.</b><br />
 <br />
 
-Powered by Python 3.8, PyQT 5.15
+Powered by Python 3, PyQT 5<br />
 <br />
 
-Icons are provided freely by [icon8](www.icons8.com) and [flaticon](www.flaticon.com)
+Icons are provided freely by <a href="www.icons8.com">icon8</a> and <a href="www.flaticon.com">flaticon</a><br />
  
-Maps are provided by [OsmAnd](www.osmand.net)"""
+Maps are provided by <a href="www.osmand.net">OsmAnd</a>"""

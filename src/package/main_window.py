@@ -379,7 +379,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     # ABOUT ACTION
     @staticmethod
     def about_dlg():
-        msg_box = QMessageBox(QMessageBox.Information, "About", OSMAD_ABOUT_INFO, QMessageBox.Ok)
+        msg_box = QMessageBox(QMessageBox.Information, "About", OSMAD_ABOUT_INFO_HTML, QMessageBox.Ok)
 
         icon = QtGui.QIcon()
         icon.addPixmap(QtGui.QPixmap(":/img/resources/base/maps.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
@@ -387,7 +387,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
         pixmap = QtGui.QPixmap(":/img/resources/base/maps.png").scaledToWidth(128, QtCore.Qt.SmoothTransformation)
         msg_box.setIconPixmap(pixmap)
-        msg_box.setTextFormat(QtCore.Qt.MarkdownText)
 
         layout = msg_box.layout()
         widget = PyQt5.QtWidgets.QWidget()
