@@ -104,6 +104,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
         self.worker.signal_file_download_progress.connect(self.slot_download_file_progress)
         self.worker.signal_bandwidth.connect(self.sb_update_bandwidth)
+        self.worker.signal_file_expand_progress.connect(self.slot_expand_file)
 
         # running
         self.thread.start()
@@ -121,7 +122,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.btn_download.setEnabled(False)
         self.btn_abort.setVisible(True)
         self.btn_about.setVisible(False)
-        self.pgb_total.setVisible(True)
+        self.pgb_total.setVisible(False)
 
         #
         self.pgb_total.setRange(0, 100)
@@ -159,12 +160,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
         # is download finished ?
         if current_size >= asset.c_size:
-            asset.downloaded()
             self.tw_assets.removeItemWidget(asset_item, COL_PROG)
             asset_item.emitDataChanged()
             # updating UI
             self.sb_update_summary()
-            asset_item.setText(COL_PROG, "Done")
+            asset_item.setText(COL_PROG, "Downloaded")
         elif current_size == -1:
             asset_item.setText(COL_PROG, "Failed")
         else:
@@ -179,33 +179,19 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
             asset_item.progress_bar.setValue(current_size)
 
-    def download_slot_all_progress(self, current):
-        self.pgb_total.setValue(current)
-        # force ui redraw
-        self.app.processEvents()
-
-    def slot_download_all_finished(self):
-        self.slot_download_finished()
-        # force ui redraw
-        self.app.processEvents()
-
-    def slot_expand_file(self, asset: OsmAsset):
+    def slot_expand_file(self, asset: OsmAsset, done, failed):
         asset_item = self.tw_get_item(asset)
+        if failed:
+            asset_item.setText(COL_PROG, "Failed")
+        else:
+            asset_item.setText(COL_PROG, "Done" if done else "Unzipping...")
 
-        # asset_item.progress_bar: PyQt5.QtWidgets.QProgressBar
-        # asset_item.progress_bar.setVisible(False)
-
-        self.tw_assets.removeItemWidget(asset_item, COL_PROG)
-
-        asset_item.setText(COL_PROG, "Expanding...")
-        # force ui redraw
-        self.app.processEvents()
-
-    def slot_expand_file_done(self, asset: OsmAsset):
-        asset_item = self.tw_get_item(asset)
-        asset_item.setText(COL_PROG, "Done")
-        # force ui redraw
-        self.app.processEvents()
+        self.pgb_total.setVisible(True)
+        self.pgb_total.setRange(0, self.worker.total_size)
+        if done:
+            self.pgb_total.setValue(self.pgb_total.value() + asset.c_size)
+            # asset no longer to be downloaded
+            asset.downloaded()
 
     # TREE WIDGET MANAGEMENT
     def tw_refresh_assets(self):
@@ -408,7 +394,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.statusbar.showMessage(f"{self.sb_message} [ {speed:.2f} {unit} ]")
 
     # ABOUT ACTION
-    def about_dlg(self):
+    @staticmethod
+    def about_dlg():
         msg_box = QMessageBox(QMessageBox.Information, "About", OSMAD_ABOUT_INFO, QMessageBox.Ok)
 
         icon = QtGui.QIcon()

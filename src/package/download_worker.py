@@ -1,6 +1,8 @@
 import os
+import shutil
 import time
 import urllib
+import zipfile
 from typing import List
 
 import requests
@@ -17,7 +19,7 @@ class ExitException(Exception):
 
 class DownloadWorker(QObject):
     signal_file_download_progress = QtCore.pyqtSignal(object, int)
-    signal_file_extract_progress = QtCore.pyqtSignal(object, int)
+    signal_file_expand_progress = QtCore.pyqtSignal(object, bool, bool)
     signal_bandwidth = QtCore.pyqtSignal(int)
     signal_finished = QtCore.pyqtSignal()
     signal_aborted = QtCore.pyqtSignal()
@@ -28,9 +30,6 @@ class DownloadWorker(QObject):
         self.early_exit = False
         self.download_list = download_list
         self.total_size = 0
-        if self.download_list:
-            for item in download_list:
-                self.total_size += item.c_size
 
     def process(self):
         try:
@@ -73,7 +72,8 @@ class DownloadWorker(QObject):
 
         return to_expand
 
-    def _already_downloaded(self, asset: OsmAsset):
+    @staticmethod
+    def _already_downloaded(asset: OsmAsset):
         if asset is None:
             return True
 
@@ -161,17 +161,63 @@ class DownloadWorker(QObject):
         return success
 
     def _expand(self, expand_list: List[OsmAsset]):
+        if not expand_list:
+            # nothing to expand
+            return
+
+        # checking output dir exists before using it
+        if not os.path.isdir(CFG_DIR_OUTPUT):
+            os.makedirs(CFG_DIR_OUTPUT)
+
+        # downloaded size
+        if self.download_list:
+            for item in expand_list:
+                self.total_size += item.c_size
+
+        # unzipping all files
         for asset in expand_list:
+            # request UI update
+            self.signal_file_expand_progress.emit(asset, False, False)
+
             # expanding
             # ....
+            success = self._expand_asset(asset)
 
             # request UI update
-            self.signal_file_extract_progress.emit()
+            self.signal_file_expand_progress.emit(asset, True, not success)
 
             # abort request
             if self.early_exit:
                 raise ExitException()
         pass
+
+    @staticmethod
+    def _expand_asset(asset: OsmAsset):
+        asset_dir = CFG_DIR_OUTPUT + asset.output_dir
+
+        # creating asset output dir
+        if not os.path.isdir(asset_dir):
+            os.makedirs(asset_dir)
+
+        if asset.filename.endswith(".zip"):
+            try:
+                # zip file handler
+                asset_zip = zipfile.ZipFile(CFG_DIR_ASSETS + asset.filename)
+
+                # list available files in the container
+                # print(asset_zip.namelist())
+
+                asset_zip.extractall(asset_dir)
+            except zipfile.BadZipFile:
+                return False
+        else:
+            try:
+                # copying file
+                shutil.copyfile(CFG_DIR_ASSETS+asset.filename, asset_dir+asset.filename)
+            except shutil.Error:
+                return False
+
+        return True
 
     def _rename(self):
         # abort request
