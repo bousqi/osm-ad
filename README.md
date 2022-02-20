@@ -21,10 +21,15 @@ downloaded maps could be copied into your smartphone over ADB or any network sha
 ## Usage
 
 ### Graphical User Interface
+* About<br/>
 ![](./res/windows_about.png)
-Main Screen on Windows
+
+
+* Main Screen on Windows<br/>
 ![](./res/windows_main.png)
-Downloading on Linux
+
+
+* Downloading on Linux<br/>
 ![](./res/linux_downloading.png)
 
 ### Command Line Interface
