@@ -1,3 +1,4 @@
+import glob
 import os
 import shutil
 import time
@@ -219,8 +220,17 @@ class DownloadWorker(QObject):
 
         return True
 
-    def _rename(self):
-        # abort request
-        if self.early_exit:
-            raise ExitException()
-        pass
+    @staticmethod
+    def _rename():
+        to_rename = glob.glob(CFG_DIR_OUTPUT + "*_2.*")
+        to_rename_subdir = glob.glob(CFG_DIR_OUTPUT + "*/*_2.*")
+        to_rename.extend(to_rename_subdir)
+
+        for file in to_rename:
+            target_name = file.replace("_2.", ".")
+
+            # cleaning previous existing target
+            if os.path.isfile(target_name):
+                os.remove(target_name)
+
+            os.rename(file, target_name)

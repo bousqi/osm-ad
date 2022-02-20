@@ -14,10 +14,8 @@ from package.ui.ui_main import Ui_MainWindow
 
 """
 TODO : 
- * Create thread ans worker for download
  * Improve thread with QThreadPool
- * loop on dld item to extract
- * rename extracted items
+ * Add setting UI for output folder config
 """
 
 
@@ -67,21 +65,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.btn_refresh.clicked.connect(self.tw_refresh_assets)
 
     # DOWNLOAD ACTIONS
-    def expand_process(self, exp_list: List[OsmAsset]):
-        self.download_slot_all_progress(0)
-
-        if not exp_list:
-            return
-
-        for index, asset in enumerate(exp_list):
-            self.expand_asset(asset)
-            self.download_slot_all_progress(index)
-
-    def expand_asset(self, asset: OsmAsset):
-        self.slot_expand_file(asset)
-        time.sleep(3)
-        self.slot_expand_file_done(asset)
-
     def download_start(self):
         dld_list = self.assets.updatable_list()
         if not dld_list:
@@ -110,12 +93,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.thread.start()
 
     def download_abort(self):
-        print("DOWNLOAD ABORT")
+        # print("DOWNLOAD ABORT")
         if self.worker:
             self.worker.early_exit = True
 
     def slot_download_begin(self):
-        print("DOWNLOAD BEGIN")
+        # print("DOWNLOAD BEGIN")
 
         # updating UI
         self.btn_refresh.setEnabled(False)
@@ -129,7 +112,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.pgb_total.setValue(0)
 
     def slot_download_aborted(self):
-        print("SLOT ABORT")
+        # print("SLOT ABORT")
         self.thread.quit()
         self.slot_download_finished()
 
@@ -142,7 +125,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 asset_item.setText(COL_PROG, "Aborted")
 
     def slot_download_finished(self):
-        print("SLOT FINISHED")
+        # print("SLOT FINISHED")
         # updating UI
         self.btn_refresh.setEnabled(True)
         self.btn_download.setEnabled(True)
