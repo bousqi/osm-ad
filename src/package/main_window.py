@@ -9,6 +9,7 @@ from PyQt5 import QtGui, QtCore
 from PyQt5.QtWidgets import QMainWindow, QMessageBox, QShortcut
 
 from package.api.osm_asset import OsmAsset
+from package.download_worker import DownloadWorker
 from package.ui.ui_main import Ui_MainWindow
 from package.api.osm_assets import OsmAssets
 from package.gui_constants import *
@@ -27,6 +28,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def __init__(self, app):
         QMainWindow.__init__(self)
         Ui_MainWindow.__init__(self)
+
+        self.worker: DownloadWorker = None
+        self.thread: QtCore.QThread = None
 
         self.assets = OsmAssets()
         self.app = app
@@ -58,7 +62,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.btn_updates.clicked.connect(self.tw_update_list)
 
         self.btn_download.clicked.connect(self.download_start)
-        self.btn_abort.clicked.connect(self.slot_download_abort)
+        self.btn_abort.clicked.connect(self.download_abort)
 
         self.le_filter.textChanged.connect(self.tw_update_list)
 
@@ -159,7 +163,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                         ref_bytes = pos
 
                     # update UI
-                    self.download_slot_file_progress(asset, pos)
+                    self.slot_download_file_progress(asset, pos)
                     self.app.processEvents()
 
                     # abort request
@@ -201,6 +205,38 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             # nothing to download
             return
 
+        # UI prep for download
+        self.slot_download_begin()
+
+        # starting download
+        # self.early_exit = False
+        # to_expand_list = self.download_process(dld_list)
+        # self.expand_process(to_expand_list)
+        # self.slot_download_all_finished()
+
+        self.worker = DownloadWorker(dld_list)
+        self.thread = QtCore.QThread()
+        self.worker.moveToThread(self.thread)
+
+        # connecting slots
+        self.thread.started.connect(self.worker.process)
+        self.worker.signal_finished.connect(self.thread.quit)
+        self.worker.signal_finished.connect(self.slot_download_finished)
+        self.worker.signal_aborted.connect(self.slot_download_aborted)
+        
+        self.worker.signal_file_download_progress.connect(self.slot_download_file_progress)
+
+        # running
+        self.thread.start()
+
+    def download_abort(self):
+        print("DOWNLOAD ABORT")
+        if self.worker:
+            self.worker.early_exit = True
+
+    def slot_download_begin(self):
+        print("DOWNLOAD BEGIN")
+
         # updating UI
         self.btn_refresh.setEnabled(False)
         self.btn_download.setEnabled(False)
@@ -209,20 +245,15 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.pgb_total.setVisible(True)
 
         #
-        self.pgb_total.setRange(0, len(dld_list))
+        self.pgb_total.setRange(0, 100)
         self.pgb_total.setValue(0)
 
-        # starting download
-        self.early_exit = False
-        to_expand_list = self.download_process(dld_list)
-        self.expand_process(to_expand_list)
-        self.slot_download_all_finished()
+    def slot_download_aborted(self):
+        print("SLOT ABORT")
+        self.thread.quit()
+        self.slot_download_finished()
 
-    def slot_download_abort(self):
-        self.early_exit = True
-        self.slot_download_stop()
-
-        for asset in self.assets.updatable_list():
+        for asset in self.worker.download_list:
             asset_item = self.tw_get_item(asset)
             self.tw_assets.removeItemWidget(asset_item, COL_PROG)
             asset_item.progress_bar = None
@@ -230,7 +261,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             if asset.updatable:
                 asset_item.setText(COL_PROG, "Aborted")
 
-    def slot_download_stop(self):
+    def slot_download_finished(self):
+        print("SLOT FINISHED")
         # updating UI
         self.btn_refresh.setEnabled(True)
         self.btn_download.setEnabled(True)
@@ -243,7 +275,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         # saving assets changes (file downloaded)
         # self.assets.save_watch_list()
 
-    def download_slot_file_progress(self, asset: OsmAsset, size):
+    def slot_download_file_progress(self, asset: OsmAsset, current_size):
         asset_item = self.tw_get_item(asset)
 
         if not asset_item.progress_bar:
@@ -255,7 +287,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             asset_item.progress_bar.setRange(0, asset.c_size)
             self.tw_assets.setItemWidget(asset_item, COL_PROG, asset_item.progress_bar)
 
-        asset_item.progress_bar.setValue(size)
+        asset_item.progress_bar.setValue(current_size)
 
     def download_slot_file_finished(self, asset: OsmAsset, success):
         if success:
@@ -273,7 +305,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.app.processEvents()
 
     def slot_download_all_finished(self):
-        self.slot_download_stop()
+        self.slot_download_finished()
         # force ui redraw
         self.app.processEvents()
 
