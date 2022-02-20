@@ -1,19 +1,16 @@
-import os
 import time
-import urllib
 from typing import List
 
-import requests
 import PyQt5.QtGui
 from PyQt5 import QtGui, QtCore
 from PyQt5.QtWidgets import QMainWindow, QMessageBox, QShortcut
 
 from package.api.osm_asset import OsmAsset
-from package.download_worker import DownloadWorker
-from package.ui.ui_main import Ui_MainWindow
 from package.api.osm_assets import OsmAssets
-from package.gui_constants import *
 from package.asset_tw_item import AssetTreeWidgetItem
+from package.download_worker import DownloadWorker
+from package.gui_constants import *
+from package.ui.ui_main import Ui_MainWindow
 
 """
 TODO : 
@@ -56,7 +53,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         QShortcut(QtGui.QKeySequence("Space"), self.tw_assets, self.tw_check_item)
         self.tw_assets.itemPressed['QTreeWidgetItem*', 'int'].connect(self.tw_toggle_watchme)
 
-        # self.tw_assets.itemPressed['QTreeWidgetItem*', 'int'].connect(self.toggleDownload_onItem)
         self.btn_grouped.clicked.connect(self.tw_update_list)
         self.btn_watched.clicked.connect(self.tw_update_list)
         self.btn_updates.clicked.connect(self.tw_update_list)
@@ -70,120 +66,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.btn_about.clicked.connect(self.about_dlg)
         self.btn_refresh.clicked.connect(self.tw_refresh_assets)
 
-    def tw_apply_filter(self):
-        pass
-
     # DOWNLOAD ACTIONS
-
-    def download_process(self, dld_list: List[OsmAsset]) -> List[OsmAsset]:
-        asset: OsmAsset
-        to_expand = []
-
-        # checking assets dir exists before using it
-        if not os.path.isdir(CFG_DIR_ASSETS):
-            os.makedirs(CFG_DIR_ASSETS)
-
-        # processing all files
-        for index, asset in enumerate(dld_list):
-            if not self.download_is_complete(asset):
-                res = self.download_asset(asset)
-            else:
-                res = True
-
-            to_expand.append(asset)
-            self.download_slot_file_finished(asset, res)
-
-            # abort request
-            if self.early_exit:
-                return
-
-            self.download_slot_all_progress(index+1)
-
-        return to_expand
-
-    def download_is_complete(self, asset: OsmAsset):
-        if asset is None:
-            return True
-
-        # comparing watchlist and remote timestamps
-        if asset.remote_ts > asset.local_ts:
-            return False
-
-        path = os.path.join(CFG_DIR_ASSETS, asset.filename)
-        # is file already there ?
-        if not os.path.isfile(path):
-            return False
-
-        # is existing file incomplete ?
-        if int(os.path.getsize(path)) != int(asset.c_size):
-            return False
-
-        # no need to download
-        return True
-
-    def download_asset(self, asset: OsmAsset):
-        # opening connection to resource
-        try:
-            r = requests.get(asset.url, headers=USER_AGENT,
-                             proxies=urllib.request.getproxies(),
-                             verify=CFG_SSL_VERIFY,
-                             stream=True)
-        except requests.exceptions.ConnectionError:
-            r = None
-        # is request success ?
-        if r and r.status_code != requests.codes.ok:
-            return False
-
-        # downloading
-
-        # Set configuration
-        block_size = 1024
-        file = os.path.join(CFG_DIR_ASSETS, asset.filename)
-
-        ref_time = time.time() * 1000
-        ref_bytes = 0
-
-        try:
-            pos = 0
-            # creating output file
-            with open(file, "wb") as f:
-                # getting stream chunks to write
-                for chunk in r.iter_content(64 * block_size):
-                    f.write(chunk)
-                    pos += len(chunk)
-
-                    # speed calculation
-                    cur_time = time.time() * 1000
-                    if cur_time - ref_time > 1000:  # 1s
-                        speed = ((pos - ref_bytes) / ((cur_time - ref_time)/1000))
-                        # updating UI
-                        self.sb_update_bandwidth(speed)
-                        # updating ref for next time
-                        ref_time = cur_time
-                        ref_bytes = pos
-
-                    # update UI
-                    self.slot_download_file_progress(asset, pos)
-                    self.app.processEvents()
-
-                    # abort request
-                    if self.early_exit:
-                        return False
-
-        except requests.exceptions.Timeout as e:
-            # Maybe set up for a retry, or continue in a retry loop
-            self.statusbar.showMessage("ERROR: server timeout")
-            print("ERROR: " + str(e))
-        except requests.exceptions.TooManyRedirects as e:
-            # Tell the user their URL was bad and try a different one
-            self.statusbar.showMessage("ERROR: too many redirects")
-            print("ERROR: " + str(e))
-        except requests.exceptions.RequestException:
-            # catastrophic error, try next
-            pass
-
-        return True
-
     def expand_process(self, exp_list: List[OsmAsset]):
         self.download_slot_all_progress(0)
 
@@ -208,12 +91,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         # UI prep for download
         self.slot_download_begin()
 
-        # starting download
-        # self.early_exit = False
-        # to_expand_list = self.download_process(dld_list)
-        # self.expand_process(to_expand_list)
-        # self.slot_download_all_finished()
-
+        # setting up the thread
         self.worker = DownloadWorker(dld_list)
         self.thread = QtCore.QThread()
         self.worker.moveToThread(self.thread)
@@ -223,8 +101,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.worker.signal_finished.connect(self.thread.quit)
         self.worker.signal_finished.connect(self.slot_download_finished)
         self.worker.signal_aborted.connect(self.slot_download_aborted)
-        
+
         self.worker.signal_file_download_progress.connect(self.slot_download_file_progress)
+        self.worker.signal_bandwidth.connect(self.sb_update_bandwidth)
 
         # running
         self.thread.start()
@@ -278,26 +157,27 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def slot_download_file_progress(self, asset: OsmAsset, current_size):
         asset_item = self.tw_get_item(asset)
 
-        if not asset_item.progress_bar:
-            max_height = self.tw_assets.visualItemRect(asset_item).height()
-
-            # progressBar on last col
-            asset_item.progress_bar = PyQt5.QtWidgets.QProgressBar()
-            asset_item.progress_bar.setMaximumHeight(max_height)
-            asset_item.progress_bar.setRange(0, asset.c_size)
-            self.tw_assets.setItemWidget(asset_item, COL_PROG, asset_item.progress_bar)
-
-        asset_item.progress_bar.setValue(current_size)
-
-    def download_slot_file_finished(self, asset: OsmAsset, success):
-        if success:
+        # is download finished ?
+        if current_size >= asset.c_size:
             asset.downloaded()
+            self.tw_assets.removeItemWidget(asset_item, COL_PROG)
+            asset_item.emitDataChanged()
+            # updating UI
+            self.sb_update_summary()
+            asset_item.setText(COL_PROG, "Done")
+        elif current_size == -1:
+            asset_item.setText(COL_PROG, "Failed")
+        else:
+            if not asset_item.progress_bar:
+                max_height = self.tw_assets.visualItemRect(asset_item).height()
 
-        item = self.tw_get_item(asset)
-        item.emitDataChanged()
-        self.sb_update_summary()
+                # progressBar on last col
+                asset_item.progress_bar = PyQt5.QtWidgets.QProgressBar()
+                asset_item.progress_bar.setMaximumHeight(max_height)
+                asset_item.progress_bar.setRange(0, asset.c_size)
+                self.tw_assets.setItemWidget(asset_item, COL_PROG, asset_item.progress_bar)
 
-        item.setText(COL_PROG, "Done" if success else "Failed")
+            asset_item.progress_bar.setValue(current_size)
 
     def download_slot_all_progress(self, current):
         self.pgb_total.setValue(current)
@@ -441,6 +321,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             return
 
         if item is None:
+            return
+
+        # forbidden during download
+        if self.worker:
             return
 
         # this item is a category
