@@ -256,8 +256,8 @@ def cli_expand(indexes):
 
 @click.group()
 @click.version_option(CLI_VERSION, prog_name="OpenStreetMap - Asset Downloader")
-@click.option('--asset-dir',  '-cd', "asset_dir", type=click.Path(dir_okay=True, file_okay=False, readable=True, writable=True, exists=False), default=None, help="Path where to download assets")
-@click.option('--extract-dir', '-dd', "extract_dir", type=click.Path(dir_okay=True, file_okay=False, readable=True, writable=True, exists=False), default=None, help="Path where to extract assets")
+@click.option('--asset-dir',  '-ad', "asset_dir", type=click.Path(dir_okay=True, file_okay=False, readable=True, writable=True, exists=False), default=None, help="Path where to download assets (value saved in config file)")
+@click.option('--extract-dir', '-ed', "extract_dir", type=click.Path(dir_okay=True, file_okay=False, readable=True, writable=True, exists=False), default=None, help="Path where to extract assets (value saved in config file)")
 def cli(asset_dir, extract_dir,):
     global osm_assets
 

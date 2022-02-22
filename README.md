@@ -32,15 +32,23 @@ downloaded maps could be copied into your smartphone over ADB or any network sha
 * Downloading on Linux<br/>
 ![](./res/linux_downloading.png)
 
+
+* Settings<br/>
+![](./res/settings_tab1.png)
+![](./res/settings_tab2.png)
+
+
 ### Command Line Interface
 ````
 Usage: osmad_cli.py [OPTIONS] COMMAND [ARGS]...
 
 Options:
-  --version                      Show the version and exit.
-  -cd, --cache-dir DIRECTORY     Path where to find cache files
-  -dd, --download-dir DIRECTORY  Path where to download and extract assets
-  --help                         Show this message and exit.
+  --version                     Show the version and exit.
+  -ad, --asset-dir DIRECTORY    Path where to download assets
+                                (value saved in config file)
+  -ed, --extract-dir DIRECTORY  Path where to extract assets 
+                                (value saved in config file)
+  --help                        Show this message and exit.
 
 Commands:
   list     List assets available in cache
@@ -88,9 +96,6 @@ Options:
   -n, --no-progress  Disable progress bar during download
   --help             Show this message and exit.
 ````
-
-Last but not least, there are some tricks to
-  * Use cd dlocal cache
   
 ## HowTo
 
