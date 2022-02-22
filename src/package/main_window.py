@@ -14,7 +14,6 @@ from package.ui.ui_main import Ui_MainWindow
 """
 TODO : 
  * Improve thread with QThreadPool
- * Add setting UI for output folder config
 """
 
 
