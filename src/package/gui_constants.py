@@ -12,7 +12,7 @@ COL_PROG = 7
 USER_AGENT = {'User-agent': 'OsmAnd'}
 
 OSMAD_ABOUT_INFO_HTML = """
-<h2><b>OpenStreeMap - Asset Downloader</b></h2>
+<h2><b>OpenStreetMap - Asset Downloader</b></h2>
 <br />
 
 

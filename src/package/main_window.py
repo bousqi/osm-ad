@@ -13,6 +13,8 @@ from package.ui.ui_main import Ui_MainWindow
 
 """
 TODO : 
+ * During process, unzip vs copying as message .zip or others
+ * Better progress during unzip (means better abort)
  * Improve thread with QThreadPool
 """
 

@@ -14,7 +14,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>OpenStreeMap - Asset Downloader</string>
+   <string>OpenStreetMap - Asset Downloader</string>
   </property>
   <property name="windowIcon">
    <iconset resource="../../resources.qrc">
