@@ -10,7 +10,7 @@ import requests
 from tqdm import *
 
 from package.api import constants
-from package.api.constants import *
+from package.api.config import AppConfig
 from package.api.osm_assets import OsmAssets
 
 osm_assets = OsmAssets()
@@ -130,7 +130,7 @@ def cli_download(assets_list, no_prog):
         for retry in range(3):
             try:
                 r = requests.get(item.url, headers=USER_AGENT,
-                                 proxies=urllib.request.getproxies(), verify=CFG_SSL_VERIFY,
+                                 proxies=urllib.request.getproxies(), verify=AppConfig.SSL_VERIFY,
                                  stream=True)
                 # click.echo(item.url)
             except requests.exceptions.ConnectionError:
@@ -257,6 +257,7 @@ def cli(cache_dir, ddl_dir,):
         OUTPUT_DIR = os.path.join(ddl_dir, OUTPUT_DIR)
         ASSETS_DIR = os.path.join(ddl_dir, ASSETS_DIR)
 
+    AppConfig.load()
     osm_assets.load_index(from_cache=True)
 
 

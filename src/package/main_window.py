@@ -1,11 +1,8 @@
-import time
-from typing import List
-
 import PyQt5.QtGui
 from PyQt5 import QtGui, QtCore
-from PyQt5.QtWidgets import QMainWindow, QMessageBox, QShortcut, QDialog
+from PyQt5.QtWidgets import QMainWindow, QMessageBox, QShortcut
 
-from package.api.config import AppConfig, CFG_FILE, CFG_DEBUG
+from package.api.config import CFG_DEBUG
 from package.api.osm_asset import OsmAsset
 from package.api.osm_assets import OsmAssets
 from package.asset_tw_item import AssetTreeWidgetItem
@@ -13,7 +10,6 @@ from package.download_worker import DownloadWorker
 from package.gui_constants import *
 from package.settings_window import SettingsWindow
 from package.ui.ui_main import Ui_MainWindow
-from package.ui.ui_settings import Ui_Settings
 
 """
 TODO : 

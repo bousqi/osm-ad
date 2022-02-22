@@ -8,7 +8,7 @@ import requests
 import xmltodict
 from typing import List, Dict
 
-from package.api.config import CFG_DIR
+from package.api.config import CFG_DIR, AppConfig
 from package.api.constants import *
 from package.api.osm_asset import OsmAsset
 
@@ -31,7 +31,7 @@ class OsmAssets(dict):
         # feeding from internet, if requested
         if not from_cache:
             try:
-                r = requests.get(REMOTE + INDEX_FILE, proxies=urllib.request.getproxies(), verify=CFG_SSL_VERIFY)
+                r = requests.get(REMOTE + INDEX_FILE, proxies=urllib.request.getproxies(), verify=AppConfig.SSL_VERIFY)
                 with open(cache_file, "wb") as f_index:
                     f_index.write(r.content)
             except:
