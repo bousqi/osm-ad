@@ -87,7 +87,7 @@ class DownloadWorker(QObject):
         # comparing watchlist and remote timestamps
         # is existing file incomplete ?
         if asset.remote_ts > asset.local_ts and \
-            int(os.path.getsize(path)) != int(asset.c_size):
+                int(os.path.getsize(path)) != int(asset.c_size):
             return False
 
         # no need to download

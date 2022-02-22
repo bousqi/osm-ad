@@ -176,6 +176,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.pgb_total.setValue(self.pgb_total.value() + asset.c_size//1024)
             # asset no longer to be downloaded
             asset.downloaded()
+            asset_item.emitDataChanged()
 
     # TREE WIDGET MANAGEMENT
     def tw_refresh_assets(self):
