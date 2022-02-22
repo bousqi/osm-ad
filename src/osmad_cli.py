@@ -16,8 +16,6 @@ from package.api.osm_assets import OsmAssets
 osm_assets = OsmAssets()
 g_order = None
 
-ASSETS_DIR = "assets/"
-OUTPUT_DIR = "out/"
 USER_AGENT = {'User-agent': 'OsmAnd'}
 
 CLI_VERSION = "0.9.5"
@@ -81,17 +79,15 @@ def _already_downloaded(item):
     if item is None:
         return True
 
-    # comparing watchlist and remote timestamps
-    if item.remote_ts > item.local_ts:
-        return False
-
-    path = ASSETS_DIR + item.name
+    path = os.path.join(AppConfig.DIR_ASSETS, item.name)
     # is file already there ?
     if not os.path.isfile(path):
         return False
 
+    # comparing watchlist and remote timestamps
     # is existing file incomplete ?
-    if int(os.path.getsize(path)) != int(item.c_size):
+    if item.remote_ts > item.local_ts and \
+        int(os.path.getsize(path)) != int(item.c_size):
         return False
 
     # no need to download
@@ -106,83 +102,90 @@ def cli_download(assets_list, no_prog):
     print("Processing download queue : {} item(s)".format(len(assets_list)))
 
     # checking assets dir exists before using it
-    if not os.path.isdir(ASSETS_DIR):
-        Path(ASSETS_DIR).mkdir(parents=True, exist_ok=True)
+    if not os.path.isdir(AppConfig.DIR_ASSETS):
+        os.makedirs(AppConfig.DIR_ASSETS)
 
     # tracking new items
     new_indexes = []
     for index, item in enumerate(assets_list):
-        # item to download ?
-        if _already_downloaded(item):
+        # item to be updated ?
+        if not item.updatable:
             print("{:>2}/{:>2} - {:<50} - NO_UPDATE".format(index+1, len(assets_list), item.filename))
             continue
 
-        # to download !
+        # item to download ?
+        downloaded = False
+        if _already_downloaded(item):
+            print("{:>2}/{:>2} - {:<50}: 100%".format(index+1, len(assets_list), item.filename))
+            downloaded = True
+        else:
+            # to download !
 
-        # Getting file size
-        # r = requests.head(url)
-        # file_size = int(r.headers.get('content-length', 0))
-        file_size = int(item.c_size)
+            # Getting file size
+            # r = requests.head(url)
+            # file_size = int(r.headers.get('content-length', 0))
+            file_size = int(item.c_size)
 
-        # requesting file
-        # giving 3 tries to get the file
-        r = None
-        for retry in range(3):
+            # requesting file
+            # giving 3 tries to get the file
+            r = None
+            for retry in range(3):
+                try:
+                    r = requests.get(item.url, headers=USER_AGENT,
+                                     proxies=urllib.request.getproxies(), verify=AppConfig.SSL_VERIFY,
+                                     stream=True)
+                    # click.echo(item.url)
+                except requests.exceptions.ConnectionError:
+                    r = None
+
+                if r and r.status_code == requests.codes.ok:
+                    break
+
+                click.echo("{:>2}/{:>2} - {:<50} - Retry {}".format(index+1, len(assets_list), item.filename, retry+1))
+
+            # has one try succeeded ?
+            if r is None or r.status_code != requests.codes.ok:
+                click.echo("{:>2}/{:>2} - {:<50} - ERROR 404, not found".format(index+1, len(assets_list), item.filename))
+                click.echo("{} > {}".format(" "*58, item.url))
+                continue
+
+            # Set configuration
+            block_size = 1024
+            initial_pos = 0
+            mode = 'wb'
+            file = os.path.join(AppConfig.DIR_ASSETS, item.filename)
+
             try:
-                r = requests.get(item.url, headers=USER_AGENT,
-                                 proxies=urllib.request.getproxies(), verify=AppConfig.SSL_VERIFY,
-                                 stream=True)
-                # click.echo(item.url)
-            except requests.exceptions.ConnectionError:
-                r = None
+                # creating output file
+                with open(file, mode) as f:
+                    # creating progress bar
+                    with tqdm(total=file_size, unit='B', unit_scale=True, unit_divisor=1024,
+                              desc="{:>2}/{:>2} - {:<50}".format(index+1, len(assets_list), item.filename),
+                              initial=initial_pos, miniters=1, dynamic_ncols=True) as pbar:
+                        # getting stream chunks to write
+                        for chunk in r.iter_content(32 * block_size):
+                            f.write(chunk)
+                            if not no_prog:
+                                pbar.update(len(chunk))
 
-            if r and r.status_code == requests.codes.ok:
-                break
+                        if no_prog:
+                            # only one update at the end
+                            pbar.update(file_size)
+                downloaded = True
 
-            click.echo("{:>2}/{:>2} - {:<50} - Retry {}".format(index+1, len(assets_list), item.filename, retry+1))
+            except requests.exceptions.Timeout as e:
+                # Maybe set up for a retry, or continue in a retry loop
+                click.echo("ERROR: " + str(e))
+            except requests.exceptions.TooManyRedirects as e:
+                # Tell the user their URL was bad and try a different one
+                click.echo("ERROR: " + str(e))
+            except requests.exceptions.RequestException:
+                # catastrophic error, try next
+                pass
 
-        # has one try succeeded ?
-        if r is None or r.status_code != requests.codes.ok:
-            click.echo("{:>2}/{:>2} - {:<50} - ERROR 404, not found".format(index+1, len(assets_list), item.filename))
-            click.echo("{} > {}".format(" "*58, item.url))
-            continue
-
-        # added to list of downloaded
-        item.downloaded()
-        new_indexes.append(item)
-
-        # Set configuration
-        block_size = 1024
-        initial_pos = 0
-        mode = 'wb'
-        file = ASSETS_DIR + item.filename
-
-        try:
-            # creating output file
-            with open(file, mode) as f:
-                # creating progress bar
-                with tqdm(total=file_size, unit='B', unit_scale=True, unit_divisor=1024,
-                          desc="{:>2}/{:>2} - {:<50}".format(index+1, len(assets_list), item.filename),
-                          initial=initial_pos, miniters=1, dynamic_ncols=True) as pbar:
-                    # getting stream chunks to write
-                    for chunk in r.iter_content(32 * block_size):
-                        f.write(chunk)
-                        if not no_prog:
-                            pbar.update(len(chunk))
-
-                    if no_prog:
-                        # only one update at the end
-                        pbar.update(file_size)
-
-        except requests.exceptions.Timeout as e:
-            # Maybe set up for a retry, or continue in a retry loop
-            click.echo("ERROR: " + str(e))
-        except requests.exceptions.TooManyRedirects as e:
-            # Tell the user their URL was bad and try a different one
-            click.echo("ERROR: " + str(e))
-        except requests.exceptions.RequestException:
-            # catastrophic error, try next
-            pass
+        if downloaded:
+            # added to list of downloaded
+            new_indexes.append(item)
 
     return new_indexes
 
@@ -193,13 +196,13 @@ def cli_expand(indexes):
         return
 
     # checking output dir exists before using it
-    if not os.path.isdir(OUTPUT_DIR):
-        Path(OUTPUT_DIR).mkdir(parents=True, exist_ok=True)
+    if not os.path.isdir(AppConfig.DIR_OUTPUT):
+        os.makedirs(AppConfig.DIR_OUTPUT)
 
     # expanding
     print("\nExpanding/Copying : {} item(s)".format(len(indexes)))
     for index, item in enumerate(indexes):
-        asset_dir = OUTPUT_DIR + item.output_dir
+        asset_dir = os.path.join(AppConfig.DIR_OUTPUT, item.output_dir)
 
         # creating asset output dir
         if not os.path.isdir(asset_dir):
@@ -211,7 +214,7 @@ def cli_expand(indexes):
         if asset_filename.endswith(".zip"):
             try:
                 # zip file handler
-                asset_zip = zipfile.ZipFile(ASSETS_DIR + asset_filename)
+                asset_zip = zipfile.ZipFile(os.path.join(AppConfig.DIR_ASSETS, asset_filename))
 
                 # list available files in the container
                 # print(asset_zip.namelist())
@@ -221,11 +224,15 @@ def cli_expand(indexes):
                 click.echo("ERROR: Corrupted/Incomplete Zipfile")
         else:
             # copying file
-            shutil.copyfile(ASSETS_DIR+asset_filename, asset_dir+asset_filename)
+            shutil.copyfile(os.path.join(AppConfig.DIR_ASSETS, asset_filename),
+                            os.path.join(asset_dir, asset_filename))
+
+        # downloaded and processed.
+        item.downloaded()
 
     # renaming
-    to_rename = glob.glob(OUTPUT_DIR + "*_2.*")
-    to_rename_subdir = glob.glob(OUTPUT_DIR + "*/*_2.*")
+    to_rename = glob.glob(AppConfig.DIR_OUTPUT + "*_2.*")
+    to_rename_subdir = glob.glob(AppConfig.DIR_OUTPUT + "*/*_2.*")
     to_rename.extend(to_rename_subdir)
 
     click.echo("\nUpdating names : {} item(s)".format(len(to_rename)))
@@ -239,25 +246,32 @@ def cli_expand(indexes):
 
         os.rename(file, dest_name)
 
+    # updating watchlist
+    if not AppConfig.CFG_DEBUG:
+        global osm_assets
+        osm_assets.save_watch_list()
+
 # --------------------------------------------------------------------------
 
 
 @click.group()
 @click.version_option(CLI_VERSION, prog_name="OpenStreetMap - Asset Downloader")
-@click.option('--cache-dir',  '-cd', "cache_dir", type=click.Path(dir_okay=True, file_okay=False, readable=True, writable=True, exists=False), default=None, help="Path where to find cache files")
-@click.option('--download-dir', '-dd', "ddl_dir", type=click.Path(dir_okay=True, file_okay=False, readable=True, writable=True, exists=False), default=None, help="Path where to download and extract assets")
-def cli(cache_dir, ddl_dir,):
-    global ASSETS_DIR, OUTPUT_DIR
+@click.option('--asset-dir',  '-cd', "asset_dir", type=click.Path(dir_okay=True, file_okay=False, readable=True, writable=True, exists=False), default=None, help="Path where to download assets")
+@click.option('--extract-dir', '-dd', "extract_dir", type=click.Path(dir_okay=True, file_okay=False, readable=True, writable=True, exists=False), default=None, help="Path where to extract assets")
+def cli(asset_dir, extract_dir,):
     global osm_assets
 
-    if cache_dir:
-        constants.CACHE_DIR = os.path.join(cache_dir, '')
-
-    if ddl_dir:
-        OUTPUT_DIR = os.path.join(ddl_dir, OUTPUT_DIR)
-        ASSETS_DIR = os.path.join(ddl_dir, ASSETS_DIR)
-
     AppConfig.load()
+
+    # updating config
+    if asset_dir:
+        AppConfig.DIR_ASSETS = asset_dir
+    if extract_dir:
+        AppConfig.DIR_OUTPUT = extract_dir
+    # saving config
+    if asset_dir or extract_dir:
+        AppConfig.save()
+
     osm_assets.load_index(from_cache=True)
 
 
