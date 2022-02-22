@@ -8,7 +8,7 @@ CFG_DEFAULT_DIR_OUTPUT = "out/"
 
 CFG_DIR = os.path.join(Path.home(), ".osm-ad")
 CFG_FILE = os.path.join(CFG_DIR, "config.json")
-CFG_DEBUG = True
+CFG_DEBUG = False
 
 
 class AppConfig:
