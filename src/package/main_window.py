@@ -3,14 +3,17 @@ from typing import List
 
 import PyQt5.QtGui
 from PyQt5 import QtGui, QtCore
-from PyQt5.QtWidgets import QMainWindow, QMessageBox, QShortcut
+from PyQt5.QtWidgets import QMainWindow, QMessageBox, QShortcut, QDialog
 
+from package.api.config import AppConfig, CFG_FILE, CFG_DEBUG
 from package.api.osm_asset import OsmAsset
 from package.api.osm_assets import OsmAssets
 from package.asset_tw_item import AssetTreeWidgetItem
 from package.download_worker import DownloadWorker
 from package.gui_constants import *
+from package.settings_window import SettingsWindow
 from package.ui.ui_main import Ui_MainWindow
+from package.ui.ui_settings import Ui_Settings
 
 """
 TODO : 
@@ -62,6 +65,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
         # about modal config
         self.btn_about.clicked.connect(self.about_dlg)
+        self.btn_settings.clicked.connect(self.settings_dlg)
         self.btn_refresh.clicked.connect(self.tw_refresh_assets)
 
     # DOWNLOAD ACTIONS
@@ -136,7 +140,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.btn_download.setEnabled(len(self.assets.updatable_list()) > 0)
 
         # saving assets changes (file downloaded)
-        # self.assets.save_watch_list()
+        if not CFG_DEBUG:
+            self.assets.save_watch_list()
 
     def slot_download_file_progress(self, asset: OsmAsset, current_size):
         asset_item = self.tw_get_item(asset)
@@ -170,9 +175,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             asset_item.setText(COL_PROG, "Done" if done else "Unzipping...")
 
         self.pgb_total.setVisible(True)
-        self.pgb_total.setRange(0, self.worker.total_size)
+        self.pgb_total.setRange(0, self.worker.total_size//1024)
         if done:
-            self.pgb_total.setValue(self.pgb_total.value() + asset.c_size)
+            self.pgb_total.setValue(self.pgb_total.value() + asset.c_size//1024)
             # asset no longer to be downloaded
             asset.downloaded()
 
@@ -376,13 +381,19 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
         self.statusbar.showMessage(f"{self.sb_message} [ {speed:.2f} {unit} ]")
 
-    # ABOUT ACTION
+    # SUB WINDOWS
+    @staticmethod
+    def settings_dlg():
+        # creating window
+        ui_settings = SettingsWindow()
+        ui_settings.exec()
+
     @staticmethod
     def about_dlg():
         msg_box = QMessageBox(QMessageBox.Information, "About", OSMAD_ABOUT_INFO_HTML, QMessageBox.Ok)
 
         icon = QtGui.QIcon()
-        icon.addPixmap(QtGui.QPixmap(":/img/resources/base/maps.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        icon.addPixmap(QtGui.QPixmap(":/icons/icons/base/about.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         msg_box.setWindowIcon(icon)
 
         pixmap = QtGui.QPixmap(":/img/resources/base/maps.png").scaledToWidth(128, QtCore.Qt.SmoothTransformation)

@@ -7,7 +7,6 @@ INDEX_HEAD = "osmand_regions"
 
 CFG_SSL_VERIFY = True
 
-CACHE_DIR = "cache/"
 CACHE_FILENAME = "indexes.xml"
 WATCH_LIST = "watch.list"
 

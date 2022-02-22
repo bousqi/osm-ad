@@ -10,6 +10,7 @@ import requests
 from PyQt5 import QtCore
 from PyQt5.QtCore import QObject
 
+from package.api.config import AppConfig
 from package.api.osm_asset import OsmAsset
 from package.gui_constants import *
 
@@ -51,8 +52,8 @@ class DownloadWorker(QObject):
         to_expand = []
 
         # checking assets dir exists before using it
-        if not os.path.isdir(CFG_DIR_ASSETS):
-            os.makedirs(CFG_DIR_ASSETS)
+        if not os.path.isdir(AppConfig.DIR_ASSETS):
+            os.makedirs(AppConfig.DIR_ASSETS)
 
         # processing all files
         for index, asset in enumerate(self.download_list):
@@ -78,17 +79,15 @@ class DownloadWorker(QObject):
         if asset is None:
             return True
 
-        # comparing watchlist and remote timestamps
-        if asset.remote_ts > asset.local_ts:
-            return False
-
-        path = os.path.join(CFG_DIR_ASSETS, asset.filename)
+        path = os.path.join(AppConfig.DIR_ASSETS, asset.filename)
         # is file already there ?
         if not os.path.isfile(path):
             return False
 
+        # comparing watchlist and remote timestamps
         # is existing file incomplete ?
-        if int(os.path.getsize(path)) != int(asset.c_size):
+        if asset.remote_ts > asset.local_ts and \
+            int(os.path.getsize(path)) != int(asset.c_size):
             return False
 
         # no need to download
@@ -101,7 +100,7 @@ class DownloadWorker(QObject):
         try:
             r = requests.get(asset.url, headers=USER_AGENT,
                              proxies=urllib.request.getproxies(),
-                             verify=CFG_SSL_VERIFY,
+                             verify=AppConfig.SSL_VERIFY,
                              stream=True)
         except requests.exceptions.ConnectionError:
             r = None
@@ -113,7 +112,7 @@ class DownloadWorker(QObject):
 
         # Set configuration
         block_size = 1024
-        file = os.path.join(CFG_DIR_ASSETS, asset.filename)
+        file = os.path.join(AppConfig.DIR_ASSETS, asset.filename)
 
         ref_time = time.time() * 1000
         ref_bytes = 0
@@ -167,13 +166,12 @@ class DownloadWorker(QObject):
             return
 
         # checking output dir exists before using it
-        if not os.path.isdir(CFG_DIR_OUTPUT):
-            os.makedirs(CFG_DIR_OUTPUT)
+        if not os.path.isdir(AppConfig.DIR_OUTPUT):
+            os.makedirs(AppConfig.DIR_OUTPUT)
 
         # downloaded size
-        if self.download_list:
-            for item in expand_list:
-                self.total_size += item.c_size
+        for item in expand_list:
+            self.total_size += item.c_size
 
         # unzipping all files
         for asset in expand_list:
@@ -194,7 +192,7 @@ class DownloadWorker(QObject):
 
     @staticmethod
     def _expand_asset(asset: OsmAsset):
-        asset_dir = CFG_DIR_OUTPUT + asset.output_dir
+        asset_dir = os.path.join(AppConfig.DIR_OUTPUT, asset.output_dir)
 
         # creating asset output dir
         if not os.path.isdir(asset_dir):
@@ -203,7 +201,8 @@ class DownloadWorker(QObject):
         if asset.filename.endswith(".zip"):
             try:
                 # zip file handler
-                asset_zip = zipfile.ZipFile(CFG_DIR_ASSETS + asset.filename)
+                zip_path = os.path.join(AppConfig.DIR_ASSETS, asset.filename)
+                asset_zip = zipfile.ZipFile(zip_path)
 
                 # list available files in the container
                 # print(asset_zip.namelist())
@@ -214,7 +213,8 @@ class DownloadWorker(QObject):
         else:
             try:
                 # copying file
-                shutil.copyfile(CFG_DIR_ASSETS+asset.filename, asset_dir+asset.filename)
+                shutil.copyfile(os.path.join(AppConfig.DIR_ASSETS, asset.filename),
+                                os.path.join(asset_dir, asset.filename))
             except shutil.Error:
                 return False
 
@@ -222,8 +222,8 @@ class DownloadWorker(QObject):
 
     @staticmethod
     def _rename():
-        to_rename = glob.glob(CFG_DIR_OUTPUT + "*_2.*")
-        to_rename_subdir = glob.glob(CFG_DIR_OUTPUT + "*/*_2.*")
+        to_rename = glob.glob(AppConfig.DIR_OUTPUT + "*_2.*")
+        to_rename_subdir = glob.glob(AppConfig.DIR_OUTPUT + "*/*_2.*")
         to_rename.extend(to_rename_subdir)
 
         for file in to_rename:

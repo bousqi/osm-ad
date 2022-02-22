@@ -8,6 +8,7 @@ import requests
 import xmltodict
 from typing import List, Dict
 
+from package.api.config import CFG_DIR
 from package.api.constants import *
 from package.api.osm_asset import OsmAsset
 
@@ -21,17 +22,17 @@ class OsmAssets(dict):
         # removing all previous entries
         self.clear()
 
-        cache_file = os.path.join(CACHE_DIR, CACHE_FILENAME)
+        cache_file = os.path.join(CFG_DIR, CACHE_FILENAME)
 
         # checking cache dir exists before using it
-        if not os.path.isdir(CACHE_DIR):
-            os.mkdir(CACHE_DIR)
+        if not os.path.isdir(CFG_DIR):
+            os.mkdir(CFG_DIR)
 
         # feeding from internet, if requested
         if not from_cache:
             try:
                 r = requests.get(REMOTE + INDEX_FILE, proxies=urllib.request.getproxies(), verify=CFG_SSL_VERIFY)
-                with open(CACHE_DIR + CACHE_FILENAME, "wb") as f_index:
+                with open(cache_file, "wb") as f_index:
                     f_index.write(r.content)
             except:
                 print("ERROR: Failed to feed indexes. Using cache")
@@ -108,7 +109,7 @@ class OsmAssets(dict):
 
     ''' WATCH LIST MANAGEMENT '''
     def load_watch_list(self):
-        wl_file = os.path.join(CACHE_DIR, WATCH_LIST)
+        wl_file = os.path.join(CFG_DIR, WATCH_LIST)
 
         # is the file there ?
         if not os.path.exists(wl_file):
@@ -129,7 +130,7 @@ class OsmAssets(dict):
         for asset in self.watch_list():
             watches.append((asset.filename, str(asset.local_ts)))
 
-        wl_file = os.path.join(CACHE_DIR, WATCH_LIST)
+        wl_file = os.path.join(CFG_DIR, WATCH_LIST)
         with open(wl_file, "w") as f:
             json.dump(watches, f, indent=4)
 

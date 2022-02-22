@@ -2,18 +2,16 @@
   <qresource prefix="icons">
     <file>icons/base/folders-32.png</file>
     <file>icons/base/up-arrow-32.png</file>
+    <file>icons/base/setting.png</file>
+    <file>icons/base/open-folder.png</file>
     <file>icons/base/visibility-32.png</file>
     <file>icons/base/abort.png</file>
     <file>icons/base/about.png</file>
     <file>icons/base/app_icon.ico</file>
-    <file>icons/base/app_osmand.ico</file>
     <file>icons/base/download.png</file>
     <file>icons/base/refresh.png</file>
   </qresource>
   <qresource prefix="img">
-    <file>resources/base/logo.png</file>
     <file>resources/base/maps.png</file>
-    <file>resources/base/osmand.png</file>
-    <file>resources/base/osmand_256.png</file>
   </qresource>
 </RCC>

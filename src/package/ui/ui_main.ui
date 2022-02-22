@@ -9,7 +9,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1176</width>
+    <width>1167</width>
     <height>503</height>
    </rect>
   </property>
@@ -197,10 +197,24 @@
           <normaloff>:/icons/icons/base/download.png</normaloff>:/icons/icons/base/download.png</iconset>
         </property>
         <property name="shortcut">
-         <string>Ctrl+S</string>
+         <string>Ctrl+D</string>
         </property>
         <property name="flat">
          <bool>false</bool>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="btn_settings">
+        <property name="text">
+         <string/>
+        </property>
+        <property name="icon">
+         <iconset resource="../../resources.qrc">
+          <normaloff>:/icons/icons/base/setting.png</normaloff>:/icons/icons/base/setting.png</iconset>
+        </property>
+        <property name="shortcut">
+         <string>Ctrl+S</string>
         </property>
        </widget>
       </item>
@@ -236,6 +250,9 @@
         <property name="icon">
          <iconset resource="../../resources.qrc">
           <normaloff>:/icons/icons/base/abort.png</normaloff>:/icons/icons/base/abort.png</iconset>
+        </property>
+        <property name="shortcut">
+         <string>Ctrl+C</string>
         </property>
        </widget>
       </item>
@@ -274,6 +291,9 @@
           <width>16</width>
           <height>16</height>
          </size>
+        </property>
+        <property name="shortcut">
+         <string>Ctrl+I</string>
         </property>
         <property name="flat">
          <bool>false</bool>

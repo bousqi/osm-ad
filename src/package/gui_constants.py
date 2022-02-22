@@ -10,9 +10,6 @@ COL_UPDT = 6
 COL_PROG = 7
 
 USER_AGENT = {'User-agent': 'OsmAnd'}
-CFG_SSL_VERIFY = True
-CFG_DIR_ASSETS = "assets/"
-CFG_DIR_OUTPUT = "out/"
 
 OSMAD_ABOUT_INFO_HTML = """
 <h2><b>OpenStreeMap - Asset Downloader</b></h2>
