@@ -161,6 +161,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
                 # progressBar on last col
                 asset_item.progress_bar = PyQt5.QtWidgets.QProgressBar()
+                asset_item.progress_bar.setFormat("Downloading : %p%")
+                asset_item.progress_bar.setAlignment(QtCore.Qt.AlignHCenter)
+
                 asset_item.progress_bar.setMaximumHeight(max_height)
                 asset_item.progress_bar.setRange(0, asset.c_size)
                 self.tw_assets.setItemWidget(asset_item, COL_PROG, asset_item.progress_bar)
