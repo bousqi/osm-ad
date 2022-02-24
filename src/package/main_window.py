@@ -115,7 +115,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def slot_download_aborted(self):
         # print("SLOT ABORT")
         self.thread.quit()
-        self.slot_download_finished()
 
         for asset in self.worker.download_list:
             asset_item = self.tw_get_item(asset)
@@ -124,6 +123,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
             if asset.updatable:
                 asset_item.setText(COL_PROG, "Aborted")
+
+        self.slot_download_finished()
 
     def slot_download_finished(self):
         # print("SLOT FINISHED")
@@ -139,6 +140,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         # saving assets changes (file downloaded)
         if not CFG_DEBUG:
             self.assets.save_watch_list()
+
+        self.worker = None
 
     def slot_download_file_progress(self, asset: OsmAsset, current_size):
         asset_item = self.tw_get_item(asset)
