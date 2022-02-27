@@ -10,7 +10,7 @@ import requests
 from tqdm import *
 
 from package.api import constants
-from package.api.config import AppConfig
+from package.api.config import AppConfig, CFG_DEBUG
 from package.api.osm_assets import OsmAssets
 
 osm_assets = OsmAssets()
@@ -249,7 +249,7 @@ def cli_expand(indexes):
         os.rename(file, dest_name)
 
     # updating watchlist
-    if not AppConfig.CFG_DEBUG:
+    if not CFG_DEBUG:
         global osm_assets
         osm_assets.save_watch_list()
 
