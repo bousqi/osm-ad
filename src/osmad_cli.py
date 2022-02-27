@@ -37,6 +37,8 @@ def cli_print_item(item):
 
 
 def cli_dump(assets):
+    global osm_assets
+
     cli_print_header()
 
     if g_order is not None:
@@ -54,7 +56,7 @@ def cli_dump(assets):
     for item in sorted_assets:
         cli_print_item(item)
 
-    print("\nDisplayed {} items among {}".format(len(sorted_assets), len(assets)))
+    print("\nDisplayed {} items among {}".format(len(sorted_assets), len(osm_assets)))
 
 
 def cli_dump_areas(assets):
