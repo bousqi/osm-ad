@@ -229,6 +229,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         elif picked_action == act_direct:
             # extract dld_list from selected items
             dld_list = [item.asset for item in self.tw_assets.selectedItems() if item.asset]
+            # force download on items
+            for item in dld_list:
+                item.local_ts = 0
             self.download_start(dld_list)
 
         elif picked_action == act_force or picked_action == act_ignore:
