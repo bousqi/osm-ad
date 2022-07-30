@@ -1,5 +1,5 @@
 import PyQt5.QtGui
-from PyQt5 import QtGui, QtCore
+from PyQt5 import QtGui, QtCore, QtWidgets
 from PyQt5.QtWidgets import QMainWindow, QMessageBox, QShortcut
 
 from package.api.config import CFG_DEBUG
@@ -47,8 +47,13 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.btn_abort.setVisible(False)
         self.pgb_total.setVisible(False)
 
+        # Connect the context menu
+        self.tw_assets.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+        self.tw_assets.customContextMenuRequested.connect(self.tw_context_menu)
+
     def setup_connections(self):
         QShortcut(QtGui.QKeySequence("Space"), self.tw_assets, self.tw_check_item)
+        QShortcut(QtGui.QKeySequence("Ctrl+C"), self.tw_assets, self.tw_copy_urls)
         self.tw_assets.itemPressed['QTreeWidgetItem*', 'int'].connect(self.tw_toggle_watchme)
 
         self.btn_grouped.clicked.connect(self.tw_update_list)
@@ -66,8 +71,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.btn_refresh.clicked.connect(self.tw_refresh_assets)
 
     # DOWNLOAD ACTIONS
-    def download_start(self):
-        dld_list = self.assets.updatable_list()
+    def download_start(self, dld_list=None):
+        if not dld_list:
+            dld_list = self.assets.updatable_list()
         if not dld_list:
             # nothing to download
             return
@@ -135,7 +141,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.btn_about.setVisible(True)
         self.pgb_total.setVisible(False)
 
+        # updating other elements
         self.btn_download.setEnabled(len(self.assets.updatable_list()) > 0)
+        self.sb_update_summary()
 
         # saving assets changes (file downloaded)
         if not CFG_DEBUG:
@@ -186,6 +194,59 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             asset_item.emitDataChanged()
 
     # TREE WIDGET MANAGEMENT
+    def tw_context_menu(self, point):
+        # about the selected node.
+        index = self.tw_assets.indexAt(point)
+        if not index.isValid():
+            return
+
+        # We build the menu.
+        menu = QtWidgets.QMenu()
+        act_toggle = menu.addAction("Toggle download")
+        act_direct = menu.addAction("Download now")
+        menu.addSeparator()
+        act_force  = menu.addAction("Force update")
+        act_ignore = menu.addAction("Ignore update")
+        menu.addSeparator()
+        act_url = menu.addAction("Copy URL")
+        # act_toggle.setToolTip("Toggle selection on this item")
+        # act_force.setToolTip("Discard previous download state")
+        # act_direct.setToolTip("Start downloading this item now !")
+        icon5 = QtGui.QIcon()
+        icon5.addPixmap(QtGui.QPixmap(":/icons/icons/base/download.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        act_direct.setIcon(icon5)
+
+        if self.worker:
+            # during download, no action possible
+            act_toggle.setEnabled(False)
+            act_force.setEnabled(False)
+            act_ignore.setEnabled(False)
+            act_direct.setEnabled(False)
+
+        picked_action = menu.exec_(self.tw_assets.mapToGlobal(point))
+        if picked_action == act_toggle:
+            self.tw_check_item()
+        elif picked_action == act_direct:
+            # extract dld_list from selected items
+            dld_list = [item.asset for item in self.tw_assets.selectedItems() if item.asset]
+            self.download_start(dld_list)
+
+        elif picked_action == act_force or picked_action == act_ignore:
+            for item in self.tw_assets.selectedItems():
+                cur_asset: OsmAsset = item.asset
+                if not item.asset:
+                    continue
+                cur_asset.watchme = True
+                cur_asset.local_ts = 0 if picked_action == act_force else cur_asset.remote_ts
+                item.emitDataChanged()
+
+            # updating other elements
+            self.btn_download.setEnabled(len(self.assets.updatable_list()) > 0)
+            self.sb_update_summary()
+
+        elif picked_action == act_url:
+            self.tw_copy_urls()
+
     def tw_refresh_assets(self):
         self.btn_refresh.setEnabled(False)
         self.app.processEvents()                    # Trick to update UI
@@ -293,6 +354,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.tw_toggle_watchme(selected_item, COL_WTCH, False)
         # update tw_assets list if necessary (filters applied)
         self.tw_refresh()
+
+    def tw_copy_urls(self):
+        cb = QtGui.QGuiApplication.clipboard()
+        url_list = [item.asset.url for item in self.tw_assets.selectedItems() if item.asset]
+        cb.setText("\n".join(url_list), mode=cb.Clipboard)
 
     def tw_toggle_watchme(self, item, column, auto_refresh=True):
         if column != COL_WTCH:
