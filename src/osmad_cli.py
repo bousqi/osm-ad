@@ -96,12 +96,13 @@ def _already_downloaded(item):
     return True
 
 
-def cli_download(assets_list, no_prog):
+def cli_download(assets_list, no_prog=False, silent=False):
     if not assets_list:
         print("Nothing to download.")
         return
 
-    print("Processing download queue : {} item(s)".format(len(assets_list)))
+    if not silent:
+        print("Processing download queue : {} item(s)".format(len(assets_list)))
 
     # checking assets dir exists before using it
     if not os.path.isdir(AppConfig.DIR_ASSETS):
@@ -112,7 +113,8 @@ def cli_download(assets_list, no_prog):
     for index, item in enumerate(assets_list):
         # item to be updated ?
         if not item.updatable:
-            print("{:>2}/{:>2} - {:<50} - NO_UPDATE".format(index+1, len(assets_list), item.filename))
+            if not silent:
+                print("{:>2}/{:>2} - {:<50} - NO_UPDATE".format(index+1, len(assets_list), item.filename))
             continue
 
         # item to download ?
@@ -188,6 +190,9 @@ def cli_download(assets_list, no_prog):
         if downloaded:
             # added to list of downloaded
             new_indexes.append(item)
+
+    if not new_indexes:
+        print(f"NO UPDATES ( watched {len(assets_list)} item(s) )")
 
     return new_indexes
 
@@ -330,7 +335,8 @@ def watch(wlist, clear, wadd, wdel):
 
 @cli.command()  # @cli, not @click!
 @click.option('--no-progress', '-n', "no_prog", is_flag=True, type=bool, help="Disable progress bar during download")
-def update(no_prog):
+@click.option('--silent', '-s', "silent", is_flag=True, type=bool, help="Silent update, display update found")
+def update(no_prog, silent):
     """Download/Update assets based on watch list"""
     global osm_assets
 
@@ -340,17 +346,20 @@ def update(no_prog):
     # reads watch list from file & apply
     osm_assets.load_watch_list()
 
+    if silent:
+        no_prog = True
+
     # download items
     dl_list = osm_assets.watch_list()
-    dl_list = cli_download(dl_list, no_prog)
+    dl_list = cli_download(dl_list, no_prog, silent)
 
     # saving all downloaded files in watch list
     osm_assets.save_watch_list()
 
-    # decompress assets
-    cli_expand(dl_list)
-
     if len(dl_list):
+        # decompress assets
+        cli_expand(dl_list)
+
         click.echo("\nDone !")
 
 

@@ -22,7 +22,7 @@ downloaded maps could be copied into your smartphone over ADB or any network sha
 
 ### Graphical User Interface
 * About<br/>
-![](./res/windows_about.png)
+  <img src="./res/windows_about.png" width="500"/>
 
 
 * Main Screen on Windows<br/>
@@ -34,8 +34,8 @@ downloaded maps could be copied into your smartphone over ADB or any network sha
 
 
 * Settings<br/>
-![](./res/settings_tab1.png)
-![](./res/settings_tab2.png)
+  <img src="./res/settings_tab1.png" width="350"/>
+  <img src="./res/settings_tab2.png" width="350"/>
 
 
 ### Command Line Interface
@@ -94,6 +94,7 @@ Usage: osmad_cli.py update [OPTIONS]
 
 Options:
   -n, --no-progress  Disable progress bar during download
+  -s, --silent       Silent update, display update found
   --help             Show this message and exit.
 ````
   

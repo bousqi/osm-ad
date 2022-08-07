@@ -247,6 +247,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.btn_download.setEnabled(len(self.assets.updatable_list()) > 0)
             self.sb_update_summary()
 
+            # saving watch list
+            self.assets.save_watch_list()
+
         elif picked_action == act_url:
             self.tw_copy_urls()
 
