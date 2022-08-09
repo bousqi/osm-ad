@@ -156,7 +156,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
         # is download finished ?
         if current_size >= asset.c_size:
+            # removing progress bar
             self.tw_assets.removeItemWidget(asset_item, COL_PROG)
+            asset_item.progress_bar = None
             asset_item.emitDataChanged()
             # updating UI
             self.sb_update_summary()
