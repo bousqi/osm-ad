@@ -51,13 +51,14 @@ Options:
   --help                        Show this message and exit.
 
 Commands:
+  get      Direct Download of assets based on filters
   list     List assets available in cache
   refresh  Refresh cache from OpenStreet Map server
   update   Download/Update assets based on watch list
   watch    Watch list management
 ````
 
-This command line interface allows three basic operation :
+This command line interface allows three basic operation for cron job:
 1) Listing assets available on server 
 ````
 Usage: osmad_cli.py list [OPTIONS]
@@ -97,7 +98,21 @@ Options:
   -s, --silent       Silent update, display update found
   --help             Show this message and exit.
 ````
-  
+
+A supplementary command has been added to support direct download:
+4) Direct download (no extraction)
+```
+Usage: osmad_cli.py get [OPTIONS]
+
+  Direct Download of assets based on filters
+
+Options:
+  -y, --yes          Do not request for user approval
+  -u, --url          Do not download, just display url
+  -f, --filter TEXT  Apply some filters to get only one download  [required]
+  --help             Show this message and exit.
+```
+
 ## HowTo
 
 ### Prepare env
