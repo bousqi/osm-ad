@@ -18,7 +18,7 @@ g_order = None
 
 USER_AGENT = {'User-agent': 'OsmAnd'}
 
-CLI_VERSION = "0.9.5"
+CLI_VERSION = "1.0.5"
 
 '''
 TODO list :
@@ -291,7 +291,7 @@ def get(yes, url, filters):
     global osm_assets
 
     # feeding assets
-    osm_assets.load_index(True)
+    osm_assets.load_index(False)
 
     # apply filters
     keys = [key for key in osm_assets.keys()]
