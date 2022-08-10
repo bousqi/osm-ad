@@ -283,6 +283,53 @@ def cli(asset_dir, extract_dir,):
 
 
 @cli.command()  # @cli, not @click!
+@click.option('--yes',  '-y', "yes", is_flag=True, type=bool, help="Do not request for user approval")
+@click.option('--url',  '-u', "url", is_flag=True, type=bool, help="Do not download, just display url")
+@click.option('--filter', '-f', "filters", type=str, required=True, multiple=True, default=None, help="Apply some filters to get only one download")
+def get(yes, url, filters):
+    """Direct Download of assets based on filters"""
+    global osm_assets
+
+    # feeding assets
+    osm_assets.load_index(True)
+
+    # apply filters
+    keys = [key for key in osm_assets.keys()]
+    for one_filter in filters:
+        keys = [key for key in keys if one_filter.lower() in key.lower()]
+    dl_list = [osm_assets.get(key) for key in keys]
+
+    # display items left
+    for asset in dl_list:
+        print(repr(asset))
+        asset.watchme = True
+
+    print(f"> {len(dl_list)} items in the list.\n")
+    if not len(dl_list):
+        return
+
+    # request user approval to download those item
+    if not yes:
+        print("Do you want to proceed with selected items ? [y/N] ", end="")
+        choice = input().lower()
+
+        # abort ?
+        if choice != "y":
+            return
+
+    # download / urls ?
+    if not url:
+        # starting download
+        dl_list = cli_download(dl_list)
+        # result
+        print(f"\nItem(s) downloaded to {AppConfig.DIR_ASSETS}")
+    else:
+        # printing URLs
+        for asset in dl_list:
+            print(asset.url)
+    pass
+
+@cli.command()  # @cli, not @click!
 @click.option('--list',  '-l', "wlist", is_flag=True, type=bool, help="List all assets to watch")
 @click.option('--clear', '-c', "clear", is_flag=True, type=bool, help="Remove all assets from watch list")
 @click.option('--add',   '-a', "wadd", type=str, default=None, help="Add specified asset to watch list")
