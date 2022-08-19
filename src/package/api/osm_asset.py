@@ -53,7 +53,9 @@ class OsmAsset:
         # building implicit fields
         self.area = extract_area(self.name, self.type)      # geographical area
         self.watchme = False                                # is the file part of watch list
-        self.url = REMOTE + DOWNLOAD_FILE + self.name + TYPE_ATTRIB[self.type]["suffix"]
+        self.url = REMOTE + DOWNLOAD_FILE + self.name
+        if self.type in TYPE_ATTRIB:
+            self.url += TYPE_ATTRIB[self.type]["suffix"]
 
     def __repr__(self):
         return "{:>10} | {:>6} MB | {} | {}".format(self.type, self.e_size//1024//1024, self.remote_date, self.name)
