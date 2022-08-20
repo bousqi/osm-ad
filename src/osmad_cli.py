@@ -99,7 +99,7 @@ def _already_downloaded(item):
 def cli_download(assets_list, no_prog=False, silent=False):
     if not assets_list:
         print("Nothing to download.")
-        return
+        return None
 
     if not silent:
         print("Processing download queue : {} item(s)".format(len(assets_list)))
@@ -403,7 +403,7 @@ def update(no_prog, silent):
     # saving all downloaded files in watch list
     osm_assets.save_watch_list()
 
-    if len(dl_list):
+    if dl_list:
         # decompress assets
         cli_expand(dl_list)
 
