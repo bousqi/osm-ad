@@ -1,8 +1,9 @@
 # useless dirs
 **/__pycache__
 /dist
-/out
 /build
+/nuitka_build
+/out
 /venv
 **/vrac/*
 #res/*
