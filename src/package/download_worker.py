@@ -114,7 +114,7 @@ class DownloadWorker(QObject):
         block_size = 1024
         file = os.path.join(AppConfig.DIR_ASSETS, asset.filename)
 
-        ref_time = time.time() * 1000
+        ref_time = time.time()
         ref_bytes = 0
 
         try:
@@ -127,11 +127,12 @@ class DownloadWorker(QObject):
                     pos += len(chunk)
 
                     # speed calculation
-                    cur_time = time.time() * 1000
-                    if cur_time - ref_time > 1000:  # 1s
-                        speed = ((pos - ref_bytes) / ((cur_time - ref_time)/1000))
+                    cur_time = time.time()
+                    if cur_time - ref_time > 1:  # 1s
+                        # print(f"{ref_time} > {cur_time} = {cur_time-ref_time}s :\t{ref_bytes} > {pos} = {pos-ref_bytes} Bytes \t{(pos-ref_bytes)//(cur_time-ref_time)}B/s")
+                        speed = ((pos - ref_bytes) / ((cur_time - ref_time)))
                         # updating UI
-                        self.signal_bandwidth.emit(speed)
+                        self.signal_bandwidth.emit(int(speed))
                         # updating ref for next time
                         ref_time = cur_time
                         ref_bytes = pos
