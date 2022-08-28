@@ -6,6 +6,9 @@ This repo was created for two Proofs of Concept, one **Graphical** application a
 line** application to define a set of map and feed the latest updates available. Those maps
 downloaded maps could be copied into your smartphone over ADB or any network share.
 
+## TODO
+
+
 ## Summary
 - [Open Street Map - Assets Downloader (CLI &amp; GUI)](#open-street-map---assets-downloader--cli--amp--gui-)
   * [Summary](#summary)
@@ -109,6 +112,7 @@ Usage: osmad_cli.py get [OPTIONS]
 Options:
   -y, --yes          Do not request for user approval
   -u, --url          Do not download, just display url
+  -d, --decompress   After download, decompress and process archive
   -f, --filter TEXT  Apply some filters to get only one download  [required]
   --help             Show this message and exit.
 ```

@@ -328,9 +328,8 @@ def get(yes, url, decomp, filters):
         if decomp and dl_list:
             # decompress assets
             cli_expand(dl_list)
-
+            # result
             click.echo(f"\nItem(s) extracted to {AppConfig.DIR_OUTPUT}")
-
     else:
         # printing URLs
         for asset in dl_list:
