@@ -285,8 +285,9 @@ def cli(asset_dir, extract_dir,):
 @cli.command()  # @cli, not @click!
 @click.option('--yes',  '-y', "yes", is_flag=True, type=bool, help="Do not request for user approval")
 @click.option('--url',  '-u', "url", is_flag=True, type=bool, help="Do not download, just display url")
+@click.option('--decompress',  '-d', "decomp", is_flag=True, type=bool, help="After download, decompress and process archive")
 @click.option('--filter', '-f', "filters", type=str, required=True, multiple=True, default=None, help="Apply some filters to get only one download")
-def get(yes, url, filters):
+def get(yes, url, decomp, filters):
     """Direct Download of assets based on filters"""
     global osm_assets
 
@@ -310,7 +311,7 @@ def get(yes, url, filters):
 
     # request user approval to download those item
     if not yes:
-        print("Do you want to proceed with selected items ? [y/N] ", end="")
+        click.echo("Do you want to proceed with selected items ? [y/N] ", end="")
         choice = input().lower()
 
         # abort ?
@@ -322,11 +323,18 @@ def get(yes, url, filters):
         # starting download
         dl_list = cli_download(dl_list)
         # result
-        print(f"\nItem(s) downloaded to {AppConfig.DIR_ASSETS}")
+        click.echo(f"\nItem(s) downloaded to {AppConfig.DIR_ASSETS}")
+
+        if decomp and dl_list:
+            # decompress assets
+            cli_expand(dl_list)
+
+            click.echo(f"\nItem(s) extracted to {AppConfig.DIR_OUTPUT}")
+
     else:
         # printing URLs
         for asset in dl_list:
-            print(asset.url)
+            click.echo(asset.url)
     pass
 
 @cli.command()  # @cli, not @click!
