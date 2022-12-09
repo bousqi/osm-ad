@@ -311,7 +311,7 @@ def get(yes, url, decomp, filters):
 
     # request user approval to download those item
     if not yes:
-        click.echo("Do you want to proceed with selected items ? [y/N] ")
+        click.echo("Do you want to proceed with selected items ? [y/N] ", nl=False)
         choice = input().lower()
 
         # abort ?
