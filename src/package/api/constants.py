@@ -17,6 +17,7 @@ FILE_PREFIXES = ["Hillshade", "Slope"]
 
 TYPE_ATTRIB = {
     "depth":      {"out": "",         "suffix": "&inapp=depth"},
+    "geotiff":    {"out": "geotiff/", "suffix": "&geotiff=yes"},
     "fonts":      {"out": "fonts/",   "suffix": "&fonts=yes"},
     "heightmap":  {"out": "tiles/",   "suffix": "&heightmap=yes"},
     "hillshade":  {"out": "tiles/",   "suffix": "&hillshade=yes"},
