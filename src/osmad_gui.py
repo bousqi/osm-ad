@@ -7,6 +7,7 @@ from PyQt5.QtWidgets import QApplication, QSplashScreen
 from package.api.config import AppConfig
 from package.main_window import MainWindow
 
+GUI_VERSION = "1.0.6"
 
 sys._excepthook = sys.excepthook
 def exception_hook(exctype, value, traceback):

@@ -18,7 +18,7 @@ g_order = None
 
 USER_AGENT = {'User-agent': 'OsmAnd'}
 
-CLI_VERSION = "1.0.5"
+CLI_VERSION = "1.0.6"
 
 '''
 TODO list :
