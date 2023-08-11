@@ -1,8 +1,8 @@
 import os.path
 import shutil
 
-from PyQt5 import QtCore, QtWidgets, QtGui
-from PyQt5.QtWidgets import QDialog, QMessageBox
+from PyQt6 import QtCore, QtWidgets, QtGui
+from PyQt6.QtWidgets import QDialog, QMessageBox
 
 from package.api.config import AppConfig, CFG_DIR
 from package.ui.ui_settings import Ui_Settings

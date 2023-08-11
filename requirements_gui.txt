@@ -1,4 +1,7 @@
-PyQt5
 PyQt5-stubs
-requests
-xmltodict
+requests~=2.27.1
+xmltodict~=0.12.0
+
+PyQt6~=6.4.0
+click~=8.0.4
+tqdm~=4.62.3

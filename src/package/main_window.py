@@ -1,6 +1,8 @@
-import PyQt5.QtGui
-from PyQt5 import QtGui, QtCore, QtWidgets
-from PyQt5.QtWidgets import QMainWindow, QMessageBox, QShortcut
+import PyQt6.QtGui
+from PyQt6.QtCore import Qt
+from PyQt6 import QtGui, QtCore, QtWidgets
+from PyQt6.QtWidgets import QMainWindow, QMessageBox
+from PyQt6.QtGui import QShortcut
 
 from package.api.config import CFG_DEBUG
 from package.api.osm_asset import OsmAsset
@@ -48,7 +50,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.pgb_total.setVisible(False)
 
         # Connect the context menu
-        self.tw_assets.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+        # self.tw_assets.setContextMenuPolicy(QtCore.Qt.Cus)
         self.tw_assets.customContextMenuRequested.connect(self.tw_context_menu)
 
     def setup_connections(self):
@@ -170,7 +172,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 max_height = self.tw_assets.visualItemRect(asset_item).height()
 
                 # progressBar on last col
-                asset_item.progress_bar = PyQt5.QtWidgets.QProgressBar()
+                asset_item.progress_bar = PyQt6.QtWidgets.QProgressBar()
                 asset_item.progress_bar.setFormat("Downloading : %p%")
                 asset_item.progress_bar.setAlignment(QtCore.Qt.AlignHCenter)
 
@@ -478,7 +480,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         msg_box.setIconPixmap(pixmap)
 
         layout = msg_box.layout()
-        widget = PyQt5.QtWidgets.QWidget()
+        widget = PyQt6.QtWidgets.QWidget()
         widget.setFixedSize(550, 1)
         layout.addWidget(widget, 3, 0, 1, 3)
 

@@ -1,5 +1,5 @@
 import typing
-from PyQt5 import QtWidgets, QtCore
+from PyQt6 import QtWidgets, QtCore
 
 from package.api.osm_asset import OsmAsset
 from package.gui_constants import *

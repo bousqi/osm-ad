@@ -7,8 +7,8 @@ import zipfile
 from typing import List
 
 import requests
-from PyQt5 import QtCore
-from PyQt5.QtCore import QObject
+from PyQt6 import QtCore
+from PyQt6.QtCore import QObject
 
 from package.api.config import AppConfig
 from package.api.osm_asset import OsmAsset
