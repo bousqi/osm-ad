@@ -7,6 +7,8 @@ from PyQt6.QtWidgets import QApplication, QSplashScreen
 from package.api.config import AppConfig
 from package.main_window import MainWindow
 
+import resources_rc
+
 GUI_VERSION = "1.0.6"
 
 sys._excepthook = sys.excepthook
@@ -32,4 +34,4 @@ if __name__ == "__main__":
     ex.show()
     splash.finish(ex)
 
-    sys.exit(app.exec_())
+    sys.exit(app.exec())

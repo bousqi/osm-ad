@@ -32,7 +32,7 @@ class SettingsWindow(QDialog, Ui_Settings):
         self.le_extract_dir.setText(AppConfig.DIR_OUTPUT)
 
         # second tab
-        self.cb_disable_ssl_check.setCheckState(QtCore.Qt.Unchecked if AppConfig.SSL_VERIFY else QtCore.Qt.Checked)
+        self.cb_disable_ssl_check.setCheckState(QtCore.Qt.CheckState.Unchecked if AppConfig.SSL_VERIFY else QtCore.Qt.CheckState.Checked)
         self.update_directories()
 
     def setup_connections(self):

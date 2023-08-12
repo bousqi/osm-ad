@@ -24,7 +24,7 @@ only 7 updates).<br />
 <b>If you like OsmAnd, buy it.</b><br />
 <br />
 
-Powered by Python 3, PyQT 5<br />
+Powered by Python 3, PyQT 6<br />
 <br />
 
 Icons are provided freely by <a href="www.icons8.com">icon8</a> and <a href="www.flaticon.com">flaticon</a><br />

@@ -19,8 +19,8 @@ class AssetTreeWidgetItem(QtWidgets.QTreeWidgetItem):
         # not a parent
         if self.asset:
             # checkbox on Watch col
-            self.setCheckState(COL_WTCH, QtCore.Qt.Unchecked)
-            self.setFlags(QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled)
+            self.setCheckState(COL_WTCH, QtCore.Qt.CheckState.Unchecked)
+            self.setFlags(QtCore.Qt.ItemFlag.ItemIsSelectable | QtCore.Qt.ItemFlag.ItemIsEnabled)
 
     def __lt__(self, other_item):
         column = self.treeWidget().sortColumn()
@@ -56,14 +56,14 @@ class AssetTreeWidgetItem(QtWidgets.QTreeWidgetItem):
 
     def textAlignment(self, column: int) -> int:
         if column in [COL_WTCH, COL_UPDT, COL_DATE]:
-            return QtCore.Qt.AlignCenter
+            return QtCore.Qt.AlignmentFlag.AlignCenter
         if column in [COL_COMP, COL_SIZE]:
-            return QtCore.Qt.AlignRight
+            return QtCore.Qt.AlignmentFlag.AlignRight
 
         return super().textAlignment(column)
 
     def data(self, column: int, role: int) -> typing.Any:
-        if role != QtCore.Qt.DisplayRole:
+        if role != QtCore.Qt.ItemDataRole.DisplayRole:
             return super().data(column, role)
 
         if not self.asset:
@@ -84,7 +84,7 @@ class AssetTreeWidgetItem(QtWidgets.QTreeWidgetItem):
             return str(self.asset.e_size // 1024 // 1024) + "MB"
         if column == COL_WTCH:
             if self.asset.watchme != self.checkState(COL_WTCH):
-                self.setCheckState(COL_WTCH, (QtCore.Qt.Checked if self.asset.watchme else QtCore.Qt.Unchecked))
+                self.setCheckState(COL_WTCH, (QtCore.Qt.CheckState.Checked if self.asset.watchme else QtCore.Qt.CheckState.Unchecked))
             return ""
         if column == COL_UPDT:
             return "Yes" if self.asset.updatable else ""

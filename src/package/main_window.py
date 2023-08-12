@@ -281,7 +281,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         #
         self.tw_assets.expandAll()
 
-        self.tw_assets.sortItems(COL_TYPE, QtCore.Qt.AscendingOrder)
+        self.tw_assets.sortItems(COL_TYPE, QtCore.Qt.SortOrder.AscendingOrder)
 
         # updating col width
         self.tw_assets.resizeColumnToContents(COL_TYPE)
@@ -389,7 +389,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         state = not item.checkState(COL_WTCH)
 
         item.asset.watchme = state
-        item.setCheckState(COL_WTCH, (QtCore.Qt.Checked if state else QtCore.Qt.Unchecked))
+        item.setCheckState(COL_WTCH, (QtCore.Qt.CheckState.Checked if state else QtCore.Qt.CheckState.Unchecked))
         item.setText(COL_UPDT, ("Yes" if item.asset.updatable else ""))
         self.assets.save_watch_list()
 
@@ -470,13 +470,17 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     @staticmethod
     def about_dlg():
-        msg_box = QMessageBox(QMessageBox.Information, "About", OSMAD_ABOUT_INFO_HTML, QMessageBox.Ok)
+        msg_box = QMessageBox()
+        msg_box.setWindowTitle("About")
+        msg_box.setText(OSMAD_ABOUT_INFO_HTML)
+        msg_box.setStandardButtons(QMessageBox.StandardButton.Ok)
+        msg_box.setIcon(QMessageBox.Icon.Information)
 
         icon = QtGui.QIcon()
-        icon.addPixmap(QtGui.QPixmap(":/icons/icons/base/about.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        icon.addPixmap(QtGui.QPixmap(":/icons/icons/base/about.png"), QtGui.QIcon.Mode.Normal, QtGui.QIcon.State.Off)
         msg_box.setWindowIcon(icon)
 
-        pixmap = QtGui.QPixmap(":/img/resources/base/maps.png").scaledToWidth(128, QtCore.Qt.SmoothTransformation)
+        pixmap = QtGui.QPixmap(":/img/resources/base/maps.png").scaledToWidth(128, QtCore.Qt.TransformationMode.SmoothTransformation)
         msg_box.setIconPixmap(pixmap)
 
         layout = msg_box.layout()
