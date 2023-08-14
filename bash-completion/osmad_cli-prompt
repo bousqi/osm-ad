@@ -1,0 +1,37 @@
+_osmad_cli_completion() {
+    local cur prev opts
+    COMPREPLY=()
+    cur="${COMP_WORDS[COMP_CWORD]}"
+    prev="${COMP_WORDS[COMP_CWORD-1]}"
+    opts="get list refresh watch update"
+
+    case "${prev}" in
+        osmad_cli)
+            COMPREPLY=( $(compgen -W "${opts}" -- ${cur}) )
+            return 0
+            ;;
+        get)
+            local get_opts="-y --yes -u --url -d --decompress -f --filter --help"
+            COMPREPLY=( $(compgen -W "${get_opts}" -- ${cur}) )
+            return 0
+            ;;
+        list)
+            local list_opts="-c --cache -l --list -t --type -a --area -d --date -s --sort --help"
+            COMPREPLY=( $(compgen -W "${list_opts}" -- ${cur}) )
+            return 0
+            ;;
+        watch)
+            local watch_opts="-l --list -c --clear -a --add -d --del --help"
+            COMPREPLY=( $(compgen -W "${watch_opts}" -- ${cur}) )
+            return 0
+            ;;
+        update)
+            local update_opts="-s -n --help"
+            COMPREPLY=( $(compgen -W "${update_opts}" -- ${cur}) )
+            return 0
+            ;;
+        *)
+            ;;
+    esac
+}
+complete -F _osmad_cli_completion osmad_cli
