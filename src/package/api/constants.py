@@ -27,6 +27,7 @@ TYPE_ATTRIB = {
     "srtm_map":   {"out": "srtm/",    "suffix": "&srtmcountry=yes"},
     "travel":     {"out": "travel/",  "suffix": "&wikivoyage=yes"},
     "voice":      {"out": "voice/",   "suffix": ""},
+    "weather":    {"out": "weather/", "suffix": "&weather=yes"},
     "wikimap":    {"out": "wiki/",    "suffix": "&wiki=yes"},
     "wikivoyage": {"out": "travel/",  "suffix": "&wikivoyage=yes"},
 }

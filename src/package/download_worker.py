@@ -97,15 +97,23 @@ class DownloadWorker(QObject):
         success = True
 
         # opening connection to resource
-        try:
-            r = requests.get(asset.url, headers=USER_AGENT,
-                             proxies=urllib.request.getproxies(),
-                             verify=AppConfig.SSL_VERIFY,
-                             stream=True)
-        except requests.exceptions.ConnectionError:
-            r = None
-        # is request success ?
-        if r and r.status_code != requests.codes.ok:
+        for retry in range(5):
+            try:
+                r = requests.get(asset.url, headers=USER_AGENT,
+                                proxies=urllib.request.getproxies(),
+                                verify=AppConfig.SSL_VERIFY,
+                                stream=True)
+            except requests.exceptions.ConnectionError:
+                r = None
+            # is request success ?
+            if r and r.status_code != requests.codes.ok:
+                break
+            
+            time.sleep(1)
+
+        # has one try succeeded ?
+        if r is None or r.status_code != requests.codes.ok:
+            #TODO : add failed status to item
             return False
 
         # downloading

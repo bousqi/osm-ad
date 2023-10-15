@@ -1,6 +1,7 @@
 import glob
 import os.path
 import shutil
+from time import sleep
 import urllib.request
 import zipfile
 from pathlib import Path
@@ -18,7 +19,7 @@ g_order = None
 
 USER_AGENT = {'User-agent': 'OsmAnd'}
 
-CLI_VERSION = "1.0.8"
+CLI_VERSION = "1.0.9"
 
 '''
 TODO list :
@@ -133,7 +134,7 @@ def cli_download(assets_list, no_prog=False, silent=False):
             # requesting file
             # giving 3 tries to get the file
             r = None
-            for retry in range(3):
+            for retry in range(5):
                 try:
                     r = requests.get(item.url, headers=USER_AGENT,
                                      proxies=urllib.request.getproxies(), verify=AppConfig.SSL_VERIFY,
@@ -146,6 +147,7 @@ def cli_download(assets_list, no_prog=False, silent=False):
                     break
 
                 click.echo("{:>2}/{:>2} - {:<50} - Retry {}".format(index+1, len(assets_list), item.filename, retry+1))
+                sleep(1)
 
             # has one try succeeded ?
             if r is None or r.status_code != requests.codes.ok:
@@ -258,6 +260,19 @@ def cli_expand(indexes):
         global osm_assets
         osm_assets.save_watch_list()
 
+
+def cli_cleanup(indexes):
+    if indexes is None:
+        click.echo("Nothing to clean up.")
+        return
+
+    # cleaning
+    print("\nCleaning : {} item(s)".format(len(indexes)))
+    for item in indexes:
+        asset_path = os.path.join(AppConfig.DIR_ASSETS, item.name)
+        if os.path.isfile(asset_path):
+            os.remove(asset_path)
+
 # --------------------------------------------------------------------------
 
 
@@ -328,6 +343,7 @@ def get(yes, url, decomp, filters):
         if decomp and dl_list:
             # decompress assets
             cli_expand(dl_list)
+            cli_cleanup(dl_list)
             # result
             click.echo(f"\nItem(s) extracted to {AppConfig.DIR_OUTPUT}")
     else:
@@ -417,6 +433,7 @@ def update(no_prog, silent):
     if upd_list:
         # decompress assets
         cli_expand(upd_list)
+        cli_cleanup(upd_list)
 
         click.echo("\nDone !")
 
