@@ -18,7 +18,7 @@ g_order = None
 
 USER_AGENT = {'User-agent': 'OsmAnd'}
 
-CLI_VERSION = "1.0.7"
+CLI_VERSION = "1.0.8"
 
 '''
 TODO list :
@@ -407,9 +407,8 @@ def update(no_prog, silent):
     dl_list = osm_assets.watch_list()
     upd_list = [item for item in dl_list if item.updatable]
 
-    click.echo(f"{len(dl_list)} being watched, {len(upd_list)} ready to be updated.")
-
     if upd_list:
+        click.echo(f"{len(dl_list)} being watched, {len(upd_list)} ready to be updated.")
         upd_list = cli_download(upd_list, no_prog, silent)
     
     # saving all downloaded files in watch list
