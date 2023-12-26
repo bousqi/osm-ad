@@ -95,6 +95,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.worker.signal_file_download_progress.connect(self.slot_download_file_progress)
         self.worker.signal_bandwidth.connect(self.sb_update_bandwidth)
         self.worker.signal_file_expand_progress.connect(self.slot_expand_file)
+        self.worker.signal_file_retry.connect(self.slot_file_download_retry)
+        self.worker.signal_file_failed.connect(self.slot_file_download_failed)
 
         # running
         self.thread.start()
@@ -183,7 +185,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def slot_expand_file(self, asset: OsmAsset, done, failed):
         asset_item = self.tw_get_item(asset)
         if failed:
-            asset_item.setText(COL_PROG, "Failed")
+            asset_item.setText(COL_PROG, "❌ Failed")
         else:
             asset_item.setText(COL_PROG, "Done" if done else "Unzipping...")
 
@@ -194,6 +196,16 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             # asset no longer to be downloaded
             asset.downloaded()
             asset_item.emitDataChanged()
+
+    def slot_file_download_retry(self, asset: OsmAsset, retry_count):
+        asset_item = self.tw_get_item(asset)
+        asset_item.setText(COL_PROG, f"Retrying {retry_count}/{RETRY_COUNT}")
+        asset_item.emitDataChanged()
+
+    def slot_file_download_failed(self, asset: OsmAsset):
+        asset_item = self.tw_get_item(asset)
+        asset_item.setText(COL_PROG, "❌ Failed")
+        asset_item.emitDataChanged()
 
     # TREE WIDGET MANAGEMENT
     def tw_context_menu(self, point):

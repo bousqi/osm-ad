@@ -22,6 +22,8 @@ class ExitException(Exception):
 class DownloadWorker(QObject):
     signal_file_download_progress = QtCore.pyqtSignal(object, int)
     signal_file_expand_progress = QtCore.pyqtSignal(object, bool, bool)
+    signal_file_retry = QtCore.pyqtSignal(object, int)
+    signal_file_failed = QtCore.pyqtSignal(object)
     signal_bandwidth = QtCore.pyqtSignal(int)
     signal_finished = QtCore.pyqtSignal()
     signal_aborted = QtCore.pyqtSignal()
@@ -63,7 +65,8 @@ class DownloadWorker(QObject):
                 res = True
 
             # to be expanded later
-            to_expand.append(asset)
+            if res:
+                to_expand.append(asset)
 
             # request UI update
             self.signal_file_download_progress.emit(asset, asset.c_size if res else -1)
@@ -97,7 +100,8 @@ class DownloadWorker(QObject):
         success = True
 
         # opening connection to resource
-        for retry in range(5):
+        r = None
+        for retry in range(RETRY_COUNT):
             try:
                 r = requests.get(asset.url, headers=USER_AGENT,
                                 proxies=urllib.request.getproxies(),
@@ -106,14 +110,16 @@ class DownloadWorker(QObject):
             except requests.exceptions.ConnectionError:
                 r = None
             # is request success ?
-            if r and r.status_code != requests.codes.ok:
+            if r and r.status_code == requests.codes.ok:
                 break
             
+            self.signal_file_retry.emit(asset, retry+1)
             time.sleep(1)
 
         # has one try succeeded ?
         if r is None or r.status_code != requests.codes.ok:
             #TODO : add failed status to item
+            self.signal_file_failed.emit(asset)
             return False
 
         # downloading

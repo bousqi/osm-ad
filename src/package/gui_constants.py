@@ -10,6 +10,7 @@ COL_UPDT = 6
 COL_PROG = 7
 
 USER_AGENT = {'User-agent': 'OsmAnd'}
+RETRY_COUNT = 5
 
 OSMAD_ABOUT_INFO_HTML = """
 <h2><b>OpenStreetMap - Asset Downloader</b></h2>
