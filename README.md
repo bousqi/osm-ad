@@ -146,8 +146,8 @@ $ sudo apt install python3-pyqt5 pyqt5-dev-tools
 #### GUI
 Before launching the application, you must build UIs and Resource file with the following commands
 ##### Generate UIs
-	$ pyuic5 src/ui/ui_main.ui -o src/ui/ui_main.py
-	$ pyuic5 src/ui/ui_settings.ui -o src/ui/ui_settings.py
+	$ pyuic5 src/package/ui/ui_main.ui -o src/package/ui/ui_main.py
+	$ pyuic5 src/package/ui/ui_settings.ui -o src/package/ui/ui_settings.py
 
 ##### Generate Res file
 	$ pyrcc5 src/resources.qrc -o src/resources_rc.py
