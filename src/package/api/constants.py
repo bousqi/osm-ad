@@ -13,7 +13,7 @@ WATCH_LIST = "watch.list"
 NOAREA_CATS = ["fonts", "depth", "voice"]
 NOAREA_NAME = "N/A"
 
-FILE_PREFIXES = ["Hillshade", "Slope"]
+FILE_PREFIXES = ["Hillshade", "Slope", "Weather", "Heightmap"]
 
 TYPE_ATTRIB = {
     "depth":      {"out": "",         "suffix": "&inapp=depth"},

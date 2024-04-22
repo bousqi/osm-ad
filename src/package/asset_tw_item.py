@@ -43,7 +43,7 @@ class AssetTreeWidgetItem(QtWidgets.QTreeWidgetItem):
         if column == COL_TYPE:
             if self.asset.type.lower() == other_item.asset.type.lower():
                 return self.asset.name.lower() < other_item.asset.name.lower()
-            return self.asset.type.lower() < other_item.asset.type.lower()
+            return self.asset.area.lower() < other_item.asset.area.lower()
 
         # sorting by download state
         if column == COL_WTCH:
@@ -74,8 +74,6 @@ class AssetTreeWidgetItem(QtWidgets.QTreeWidgetItem):
             return self.asset.area
         if column == COL_NAME:
             return self.asset.name
-        if column == COL_DATE:
-            return self.asset.remote_date
         if column == COL_DATE:
             return self.asset.remote_date
         if column == COL_COMP:
