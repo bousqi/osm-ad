@@ -236,9 +236,6 @@ def cli_expand(indexes):
             shutil.copyfile(os.path.join(AppConfig.DIR_ASSETS, asset_filename),
                             os.path.join(asset_dir, asset_filename))
 
-        # downloaded and processed.
-        item.downloaded()
-
     # renaming
     to_rename = glob.glob(AppConfig.DIR_OUTPUT + "*_2.*")
     to_rename_subdir = glob.glob(AppConfig.DIR_OUTPUT + "*/*_2.*")
@@ -254,11 +251,6 @@ def cli_expand(indexes):
             os.remove(dest_name)
 
         os.rename(file, dest_name)
-
-    # updating watchlist
-    if not CFG_DEBUG:
-        global osm_assets
-        osm_assets.save_watch_list()
 
 
 def cli_cleanup(indexes):
@@ -427,13 +419,16 @@ def update(no_prog, silent):
         click.echo(f"{len(dl_list)} being watched, {len(upd_list)} ready to be updated.")
         upd_list = cli_download(upd_list, no_prog, silent)
     
-    # saving all downloaded files in watch list
-    osm_assets.save_watch_list()
-
-    if upd_list:
         # decompress assets
         cli_expand(upd_list)
         cli_cleanup(upd_list)
+
+        # downloaded and processed.
+        for item in upd_list:
+            item.downloaded()
+
+        # saving all downloaded files in watch list
+        osm_assets.save_watch_list()
 
         click.echo("\nDone !")
 
