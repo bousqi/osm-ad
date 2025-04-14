@@ -177,7 +177,9 @@ def cli_download(assets_list, no_prog=False, silent=False):
                         if no_prog:
                             # only one update at the end
                             pbar.update(file_size)
-                downloaded = True
+                    # file size must be same as expected size from http request
+                    if f.tell() == file_size:
+                        downloaded = True
 
             except requests.exceptions.Timeout as e:
                 # Maybe set up for a retry, or continue in a retry loop
