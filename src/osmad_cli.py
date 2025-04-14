@@ -397,8 +397,9 @@ def watch(wlist, clear, wadd, wdel):
 
 @cli.command()  # @cli, not @click!
 @click.option('--no-progress', '-n', "no_prog", is_flag=True, type=bool, help="Disable progress bar during download")
+@click.option('--dry-run',  '-d', "dry", is_flag=True, type=bool, help="Only check for pending update, dry run (nothing downloaded)")
 @click.option('--silent', '-s', "silent", is_flag=True, type=bool, help="Silent update, display update found")
-def update(no_prog, silent):
+def update(no_prog, dry, silent):
     """Download/Update assets based on watch list"""
     global osm_assets
 
@@ -417,20 +418,21 @@ def update(no_prog, silent):
 
     if upd_list:
         click.echo(f"{len(dl_list)} being watched, {len(upd_list)} ready to be updated.")
-        upd_list = cli_download(upd_list, no_prog, silent)
-    
-        # decompress assets
-        cli_expand(upd_list)
-        cli_cleanup(upd_list)
+        if not dry:
+            upd_list = cli_download(upd_list, no_prog, silent)
+        
+            # decompress assets
+            cli_expand(upd_list)
+            cli_cleanup(upd_list)
 
-        # downloaded and processed.
-        for item in upd_list:
-            item.downloaded()
+            # downloaded and processed.
+            for item in upd_list:
+                item.downloaded()
 
-        # saving all downloaded files in watch list
-        osm_assets.save_watch_list()
+            # saving all downloaded files in watch list
+            osm_assets.save_watch_list()
 
-        click.echo("\nDone !")
+            click.echo("\nDone !")
 
 
 @cli.command()  # @cli, not @click!
