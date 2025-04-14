@@ -19,7 +19,7 @@ g_order = None
 
 USER_AGENT = {'User-agent': 'OsmAnd'}
 
-CLI_VERSION = "1.0.11"
+CLI_VERSION = "1.0.12"
 
 '''
 TODO list :
@@ -420,7 +420,14 @@ def update(no_prog, dry, silent):
 
     if upd_list:
         click.echo(f"{len(dl_list)} being watched, {len(upd_list)} ready to be updated.")
-        if not dry:
+        if dry:
+            if not silent:
+                for index, item in enumerate(dl_list):
+                    # item to be updated ?
+                    state = "UPDATE" if (item.updatable) else "NO_UPDATE"
+                    print("{:>2}/{:>2} - {:<50} - {}".format(index+1, len(dl_list), item.filename, state))
+
+        else:
             upd_list = cli_download(upd_list, no_prog, silent)
         
             # decompress assets
